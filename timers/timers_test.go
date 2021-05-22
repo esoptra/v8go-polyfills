@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"go.kuoruan.net/v8go-polyfills/console"
+	"github.com/esoptra/v8go-polyfills/console"
 	"rogchap.com/v8go"
 )
 
