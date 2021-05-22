@@ -23,7 +23,7 @@
 package internal
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -38,17 +38,13 @@ type Response struct {
 	Redirected bool
 	URL        string
 	Body       string
+	BodyReader io.ReadCloser //`json:"bodyReader"`
 }
 
 /*
  Handle the *http.Response, return *Response
 */
 func HandleHttpResponse(res *http.Response, url string, redirected bool) (*Response, error) {
-	defer res.Body.Close()
-	resBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return nil, err
-	}
 
 	return &Response{
 		Header:     res.Header,
@@ -57,6 +53,6 @@ func HandleHttpResponse(res *http.Response, url string, redirected bool) (*Respo
 		OK:         res.StatusCode >= 200 && res.StatusCode < 300,
 		Redirected: redirected,
 		URL:        url,
-		Body:       string(resBody),
+		BodyReader: res.Body,
 	}, nil
 }
