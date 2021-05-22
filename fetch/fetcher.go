@@ -27,16 +27,18 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
-	"go.kuoruan.net/v8go-polyfills/fetch/internal"
-	. "go.kuoruan.net/v8go-polyfills/internal"
-
 	"rogchap.com/v8go"
+
+	"github.com/esoptra/v8go-polyfills/fetch/internal"
+	. "github.com/esoptra/v8go-polyfills/internal"
 )
 
 const (
@@ -62,16 +64,18 @@ type Fetcher interface {
 	GetFetchFunctionCallback() v8go.FunctionCallback
 }
 
-type fetcher struct {
+type Fetch struct {
 	// Use local handler to handle the relative path (starts with "/") request
 	LocalHandler http.Handler
 
 	UserAgentProvider UserAgentProvider
 	AddrLocal         string
+	ResponseMap       sync.Map
+	InputBody         io.ReadCloser
 }
 
-func NewFetcher(opt ...Option) Fetcher {
-	ft := &fetcher{
+func NewFetcher(opt ...Option) *Fetch {
+	ft := &Fetch{
 		LocalHandler:      defaultLocalHandler,
 		UserAgentProvider: defaultUserAgentProvider,
 		AddrLocal:         AddrLocal,
@@ -84,11 +88,11 @@ func NewFetcher(opt ...Option) Fetcher {
 	return ft
 }
 
-func (f *fetcher) GetLocalHandler() http.Handler {
+func (f *Fetch) GetLocalHandler() http.Handler {
 	return f.LocalHandler
 }
 
-func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
+func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 		args := info.Args()
@@ -135,6 +139,10 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 				resolver.Reject(newErrorValue(ctx, err))
 				return
 			}
+			//store a pointer reference with the fetcher
+			mini := NewUuid()
+			f.ResponseMap.Store(mini, res.BodyReader)
+			res.Body = mini
 
 			resObj, err := newResponseObject(ctx, res)
 			if err != nil {
@@ -149,7 +157,7 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 	}
 }
 
-func (f *fetcher) initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request, error) {
+func (f *Fetch) initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request, error) {
 	u, err := internal.ParseRequestURL(reqUrl)
 	if err != nil {
 		return nil, err
@@ -201,7 +209,7 @@ func (f *fetcher) initRequest(reqUrl string, reqInit internal.RequestInit) (*int
 	return req, nil
 }
 
-func (f *fetcher) fetchLocal(r *internal.Request) (*internal.Response, error) {
+func (f *Fetch) fetchLocal(r *internal.Request) (*internal.Response, error) {
 	if f.LocalHandler == nil {
 		return nil, errors.New("no local handler present")
 	}
@@ -225,7 +233,7 @@ func (f *fetcher) fetchLocal(r *internal.Request) (*internal.Response, error) {
 	return internal.HandleHttpResponse(rcd.Result(), r.URL.String(), false)
 }
 
-func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
+func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	var body io.Reader
 	if r.Method != "GET" {
 		body = strings.NewReader(r.Body)
@@ -277,6 +285,13 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
 		go func() {
+			defer res.BodyReader.Close()
+			resBody, err := ioutil.ReadAll(res.BodyReader)
+			if err != nil {
+				resBody = nil
+			}
+			res.Body = string(resBody)
+			//fmt.Println("respbody =>", res.Body)
 			v, _ := v8go.NewValue(iso, res.Body)
 			resolver.Resolve(v)
 		}()
@@ -293,6 +308,12 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
 		go func() {
+			defer res.BodyReader.Close()
+			resBody, err := ioutil.ReadAll(res.BodyReader)
+			if err != nil {
+				resBody = nil
+			}
+			res.Body = string(resBody)
 			val, err := v8go.JSONParse(ctx, res.Body)
 			if err != nil {
 				rejectVal, _ := v8go.NewValue(iso, err.Error())
@@ -340,6 +361,7 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		{Key: "url", Val: res.URL},
 		{Key: "body", Val: res.Body},
 	} {
+		//fmt.Println(v.Key, v.Val)
 		if err := resObj.Set(v.Key, v.Val); err != nil {
 			return nil, err
 		}

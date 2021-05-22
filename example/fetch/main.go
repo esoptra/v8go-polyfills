@@ -27,7 +27,7 @@ import (
 	"fmt"
 	"time"
 
-	"go.kuoruan.net/v8go-polyfills/fetch"
+	"github.com/esoptra/v8go-polyfills/fetch"
 	"rogchap.com/v8go"
 )
 
