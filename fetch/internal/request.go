@@ -24,6 +24,7 @@ package internal
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -50,9 +51,10 @@ type RequestInit struct {
  Request is the request object used by fetch
 */
 type Request struct {
-	Body     string
-	Method   string
-	Redirect string
+	Body       string
+	BodyReader io.ReadCloser
+	Method     string
+	Redirect   string
 
 	Header     http.Header
 	URL        *url.URL
