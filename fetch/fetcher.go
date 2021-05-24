@@ -164,8 +164,9 @@ func (f *Fetch) initRequest(reqUrl string, reqInit internal.RequestInit) (*inter
 	}
 
 	req := &internal.Request{
-		URL:  u,
-		Body: reqInit.Body,
+		URL:        u,
+		Body:       reqInit.Body,
+		BodyReader: f.InputBody,
 		Header: http.Header{
 			"Accept":     []string{"*/*"},
 			"Connection": []string{"close"},
@@ -236,7 +237,11 @@ func (f *Fetch) fetchLocal(r *internal.Request) (*internal.Response, error) {
 func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	var body io.Reader
 	if r.Method != "GET" {
-		body = strings.NewReader(r.Body)
+		if r.BodyReader != nil {
+			body = r.BodyReader
+		} else {
+			body = strings.NewReader(r.Body)
+		}
 	}
 
 	req, err := http.NewRequest(r.Method, r.URL.String(), body)

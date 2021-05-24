@@ -23,6 +23,7 @@
 package fetch
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -62,5 +63,11 @@ func WithUserAgentProvider(provider UserAgentProvider) Option {
 func WithAddrLocal(addr string) Option {
 	return optionFunc(func(ft *Fetch) {
 		ft.AddrLocal = addr
+	})
+}
+
+func WithRequestBody(body io.ReadCloser) Option {
+	return optionFunc(func(ft *Fetch) {
+		ft.InputBody = body
 	})
 }
