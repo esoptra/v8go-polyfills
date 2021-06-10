@@ -25,7 +25,7 @@ package url
 import (
 	"errors"
 
-	"rogchap.com/v8go"
+	"github.com/esoptra/v8go"
 )
 
 func InjectTo(ctx *v8go.Context) error {

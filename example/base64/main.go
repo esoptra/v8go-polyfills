@@ -25,8 +25,8 @@ package main
 import (
 	"fmt"
 
+	"github.com/esoptra/v8go"
 	"github.com/esoptra/v8go-polyfills/base64"
-	"rogchap.com/v8go"
 )
 
 func main() {

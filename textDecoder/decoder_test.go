@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Xingwang Liao
+ * Copyright (c) 2021 Twintag
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,83 +20,55 @@
  * SOFTWARE.
  */
 
-package fetch
+package textDecoder
 
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/esoptra/v8go"
+	"github.com/esoptra/v8go-polyfills/console"
 )
 
-func TestInjectTo(t *testing.T) {
+func TestInject(t *testing.T) {
 	t.Parallel()
 
 	iso, _ := v8go.NewIsolate()
+	ctx, _ := v8go.NewContext(iso)
 	global, _ := v8go.NewObjectTemplate(iso)
 
-	if err := InjectTo(iso, global); err != nil {
-		t.Errorf("error when inject fetch polyfill, %s", err)
-		return
+	if err := InjectWith(iso, global); err != nil {
+		t.Error(err)
 	}
 
 	ctx, err := v8go.NewContext(iso, global)
 	if err != nil {
-		t.Errorf("create context failed: %s", err)
+		t.Error(err)
 		return
 	}
+	if err := console.InjectTo(ctx); err != nil {
+		t.Error(err)
+	}
 
-	val, err := ctx.RunScript("fetch('https://www.example.com')", "fetch_example.js")
+	val, err := ctx.RunScript(`const decoder = new TextDecoder()
+	const utf8 = new Uint8Array([72,226,130,172,108,108,111,32,87,111,114,108,100]);
+	const view = decoder.decode(utf8)
+	console.log("=>", view); 
+
+	const decoder1 = new TextDecoder('windows-1251', 'fatal=true')
+	let bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33, 226, 130, 172]);
+	const view1 = decoder1.decode(bytes)
+	console.log("=>", view1);
+	console.log(typeof view); //expecting the type as string
+	view `, "encoder.js")
 	if err != nil {
-		t.Errorf("failed to do fetch test: %s", err)
-		return
+		t.Error(err)
 	}
 
-	pro, err := val.AsPromise()
-	if err != nil {
-		t.Errorf("can't convert to promise object: %s", err)
-		return
-	}
-
-	done := make(chan bool, 1)
-	go func() {
-		for pro.State() == v8go.Pending {
-			continue
-		}
-
-		done <- true
-	}()
-
-	select {
-	case <-time.After(time.Second * 10):
-		t.Errorf("request timeout")
-		return
-	case <-done:
-		stat := pro.State()
-		if stat == v8go.Rejected {
-			fmt.Printf("reject with error: %s\n", pro.Result().String())
-		}
-
-		if pro.State() != v8go.Fulfilled {
-			t.Errorf("should fetch success, but not")
-			return
-		}
-	}
-
-	obj, err := pro.Result().AsObject()
-	if err != nil {
-		t.Errorf("can't convert fetch result to object, %s", err)
-		return
-	}
-
-	ok, err := obj.Get("ok")
-	if err != nil {
-		t.Errorf("get object 'ok' failed: %s", err)
-		return
-	}
-
-	if !ok.Boolean() {
-		t.Error("should be ok, but not")
+	ok := val.IsUint8Array()
+	if ok {
+		fmt.Println("returned val is array", val.Object().Value)
+	} else {
+		fmt.Println("returned val is not array", val.Object().Value)
 	}
 }

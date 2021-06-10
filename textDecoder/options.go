@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Xingwang Liao
+ * Copyright (c) 2021 Twintag
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,33 +20,14 @@
  * SOFTWARE.
  */
 
-package base64
+package textDecoder
 
-import (
-	"fmt"
+type Option interface {
+	apply(c *Decoder)
+}
 
-	"github.com/esoptra/v8go"
-)
+type optionFunc func(c *Decoder)
 
-func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate) error {
-	b := NewBase64()
-
-	for _, f := range []struct {
-		Name string
-		Func func() v8go.FunctionCallback
-	}{
-		{Name: "atob", Func: b.GetAtobFunctionCallback},
-		{Name: "btoa", Func: b.GetBtoaFunctionCallback},
-	} {
-		fn, err := v8go.NewFunctionTemplate(iso, f.Func())
-		if err != nil {
-			return fmt.Errorf("v8go-polyfills/fetch: %w", err)
-		}
-
-		if err := global.Set(f.Name, fn, v8go.ReadOnly); err != nil {
-			return fmt.Errorf("v8go-polyfills/fetch: %w", err)
-		}
-	}
-
-	return nil
+func (f optionFunc) apply(c *Decoder) {
+	f(c)
 }

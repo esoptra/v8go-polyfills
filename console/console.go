@@ -27,7 +27,7 @@ import (
 	"io"
 	"os"
 
-	"rogchap.com/v8go"
+	"github.com/esoptra/v8go"
 )
 
 type Console interface {

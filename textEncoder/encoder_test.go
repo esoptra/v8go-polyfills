@@ -26,30 +26,9 @@ import (
 	"fmt"
 	"testing"
 
-	"rogchap.com/v8go"
-
+	"github.com/esoptra/v8go"
 	"github.com/esoptra/v8go-polyfills/console"
 )
-
-// func TestInject1(t *testing.T) {
-// 	t.Parallel()
-// 	iso, _ := v8go.NewIsolate()
-// 	ctx, _ := v8go.NewContext(iso)
-
-// 	if err := InjectTo(ctx); err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	if err := console.InjectTo(ctx); err != nil {
-// 		t.Error(err)
-// 	}
-
-// 	if _, err := ctx.RunScript(`const encoder = TextEncoder()
-// 	const view = encoder.encode('€')
-// 	console.log(view); // Uint8Array(3) [226, 130, 172]`, "encoder.js"); err != nil {
-// 		t.Error(err)
-// 	}
-// }
 
 func TestInject(t *testing.T) {
 	t.Parallel()
@@ -58,7 +37,7 @@ func TestInject(t *testing.T) {
 	ctx, _ := v8go.NewContext(iso)
 	global, _ := v8go.NewObjectTemplate(iso)
 
-	if err := InjectWithGlobalTo(iso, global); err != nil {
+	if err := InjectWith(iso, global); err != nil {
 		t.Error(err)
 	}
 
@@ -73,18 +52,26 @@ func TestInject(t *testing.T) {
 
 	val, err := ctx.RunScript(`const encoder = new TextEncoder()
 	console.log(typeof encoder.encode);
-	const view = encoder.encode('€')
+	const view = encoder.encode('H€llo World')
 	console.log("=>", view); 
 	console.log(typeof view); //expecting the type as Object (uint8Array)
+
+// 	const utf8 = new Uint8Array(7);
+
+// let encodedResults = encoder.encodeInto('H€llo', utf8);
+// console.log("=>", utf8, encodedResults.read, encodedResults.written); 
+// 	console.log(typeof utf8); //expecting the type as Object (uint8Array)
+
+
 	view `, "encoder.js")
 	if err != nil {
 		t.Error(err)
 	}
 
-	idx, ok := val.ArrayIndex()
+	ok := val.IsUint8Array()
 	if ok {
-		fmt.Println("returned val is array", idx)
+		fmt.Println("returned val is array", val.Object().Value)
 	} else {
-		fmt.Println("returned val is not array", idx)
+		fmt.Println("returned val is not array", val.Object().Value)
 	}
 }
