@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	"rogchap.com/v8go"
+	"github.com/esoptra/v8go"
 
 	"github.com/esoptra/v8go-polyfills/console"
 )

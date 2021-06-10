@@ -23,8 +23,8 @@
 package main
 
 import (
+	"github.com/esoptra/v8go"
 	"github.com/esoptra/v8go-polyfills/console"
-	"rogchap.com/v8go"
 )
 
 func main() {

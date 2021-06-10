@@ -20,19 +20,23 @@
  * SOFTWARE.
  */
 
-package textEncoder
+package textDecoder
 
 import (
 	"fmt"
+	"strings"
+
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/charmap"
 
 	"github.com/esoptra/v8go"
 )
 
-type Encoder struct {
+type Decoder struct {
 }
 
-func NewEncode(opt ...Option) *Encoder {
-	c := &Encoder{}
+func NewDecode(opt ...Option) *Decoder {
+	c := &Decoder{}
 
 	for _, o := range opt {
 		o.apply(c)
@@ -41,18 +45,86 @@ func NewEncode(opt ...Option) *Encoder {
 	return c
 }
 
-func (c *Encoder) TextEncoderFunctionCallback() v8go.FunctionCallback {
+//Encoding struct resembles internal.Encoding in "golang.org/x/text/encoding/internal"
+//this is to avoid import of internal package
+type Encoding struct {
+	encoding.Encoding
+	Name string
+	MIB  uint16
+}
+
+func getDecoder(label string) (*encoding.Decoder, error) {
+
+	if label == "" {
+		//utf-8 by default
+		return nil, nil
+	}
+	sanitize := func(input string) string {
+		x := strings.ToUpper(strings.ReplaceAll(input, "-", " "))
+		//fmt.Println("sanitized", x)
+		return x
+	}
+	sanitizedlabel := sanitize(label)
+	//fmt.Println("sanitized label", sanitizedlabel)
+	for _, eachEncoding := range charmap.All {
+
+		name := ""
+		cast, ok := eachEncoding.(*charmap.Charmap)
+		if !ok {
+			castInternal, ok := eachEncoding.(*Encoding)
+			if !ok {
+				continue
+			} else {
+				name = castInternal.Name
+			}
+		} else {
+			name = cast.String()
+		}
+		if sanitize(name) == sanitizedlabel {
+			return eachEncoding.NewDecoder(), nil
+		}
+	}
+
+	return nil, fmt.Errorf("Not supported label %q", label)
+}
+
+func (c *Decoder) TextDecoderFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 		iso, _ := ctx.Isolate()
+		label := ""
+		if len(info.Args()) > 0 {
+			label = info.Args()[0].String()
+			if len(info.Args()) > 1 {
+				fmt.Printf("Options %q Not yet supported\n", info.Args()[1].String())
+			}
+		}
 
-		encodeFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		decodeFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 			args := info.Args()
 			if len(args) <= 0 {
 				return iso.ThrowException(fmt.Sprintf("Expected an arguments\n"))
 			}
-			s := args[0].String()
-			v, err := v8go.NewValue(iso, []byte(s))
+			s := args[0].Uint8Array()
+			result := ""
+
+			dec, err := getDecoder(label)
+			if err != nil {
+				return iso.ThrowException(err.Error())
+			}
+			if dec != nil {
+				bUTF := make([]byte, len(s)*3)
+				n, _, err := dec.Transform(bUTF, s, true)
+				if err != nil {
+					return iso.ThrowException(fmt.Sprintf("Error transforming: %#v", err))
+				}
+				result = string(bUTF[:n])
+			} else {
+				result = string(s)
+			}
+
+			//fmt.Println(result)
+			v, err := v8go.NewValue(iso, result)
 			if err != nil {
 				return iso.ThrowException(fmt.Sprintf("error creating new val: %#v", err))
 			}
@@ -62,44 +134,15 @@ func (c *Encoder) TextEncoderFunctionCallback() v8go.FunctionCallback {
 			return iso.ThrowException(fmt.Sprintf("error creating encode() template: %#v", err))
 		}
 
-		/*
-			encodeIntoFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
-				args := info.Args()
-				if len(args) <= 0 {
-					return iso.ThrowException(fmt.Sprintf("Expected an arguments\n"))
-				}
-				s := args[0].String()
-				result := args[1].Uint8Array()
-				i := 0
-				for ; i < len(s); i++ {
-					fmt.Printf("%d ", s[i])
-					result[i] = s[i]
-				}
-				v, err := v8go.JSONParse(info.Context(), fmt.Sprintf(`{"read": %d, "written": %d }`, i, i))
-				if err != nil {
-					return iso.ThrowException(fmt.Sprintf("Error parsing json val\n"))
-				}
-
-				return v
-			})
-
-			if err != nil {
-				return iso.ThrowException(fmt.Sprintf("error creating encodeInto() template: %#v", err))
-			}
-		*/
 		resTmp, err := v8go.NewObjectTemplate(iso)
 		if err != nil {
 			return iso.ThrowException(fmt.Sprintf("error creating object template: %#v", err))
 		}
 
-		if err := resTmp.Set("encode", encodeFnTmp, v8go.ReadOnly); err != nil {
+		if err := resTmp.Set("decode", decodeFnTmp, v8go.ReadOnly); err != nil {
 			return iso.ThrowException(fmt.Sprintf("error setting encode function template: %#v", err))
 		}
-		/*
-			if err := resTmp.Set("encodeInto", encodeIntoFnTmp, v8go.ReadOnly); err != nil {
-				return iso.ThrowException(fmt.Sprintf("error setting encodeInto function template: %#v", err))
-			}
-		*/
+
 		resObj, err := resTmp.NewInstance(ctx)
 		if err != nil {
 			return iso.ThrowException(fmt.Sprintf("error new instance from ctx: %#v", err))

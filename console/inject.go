@@ -26,7 +26,7 @@ import (
 	"errors"
 	"fmt"
 
-	"rogchap.com/v8go"
+	"github.com/esoptra/v8go"
 )
 
 /**
