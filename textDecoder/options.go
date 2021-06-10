@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Xingwang Liao
+ * Copyright (c) 2021 Twintag
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,36 +20,14 @@
  * SOFTWARE.
  */
 
-package main
+package textDecoder
 
-import (
-	"fmt"
+type Option interface {
+	apply(c *Decoder)
+}
 
-	"github.com/esoptra/v8go"
-	"github.com/esoptra/v8go-polyfills/base64"
-)
+type optionFunc func(c *Decoder)
 
-func main() {
-	iso := v8go.NewIsolate()
-	global := v8go.NewObjectTemplate(iso)
-
-	if err := base64.InjectTo(iso, global); err != nil {
-		panic(err)
-	}
-
-	ctx := v8go.NewContext(iso, global)
-
-	val, err := ctx.RunScript("btoa('Hello, world!')", "btoa.js")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("btoa: %s\n", val.String())
-
-	val, err = ctx.RunScript(fmt.Sprintf("atob('%s')", val.String()), "atob.js")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("atob: %s\n", val.String())
+func (f optionFunc) apply(c *Decoder) {
+	f(c)
 }
