@@ -32,8 +32,8 @@ import (
 	"time"
 
 	"github.com/esoptra/v8go"
-
 	"github.com/esoptra/v8go-polyfills/console"
+	"github.com/esoptra/v8go-polyfills/uuid"
 )
 
 func TestNewFetcher(t *testing.T) {
@@ -237,7 +237,7 @@ func testFetchBodyWithLazyLoad(t *testing.T, script string) {
 		return
 	}
 	fmt.Println("body : ", body.String())
-	if IsUUID(body.String()) {
+	if uuid.IsUUID(body.String()) {
 		val, ok := fetcher.ResponseMap.Load(body.String())
 		if ok {
 			result := val.(io.ReadCloser)
