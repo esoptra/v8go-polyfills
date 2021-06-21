@@ -1,4 +1,4 @@
-package fetch
+package uuid
 
 import (
 	"crypto/md5"

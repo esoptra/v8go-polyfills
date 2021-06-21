@@ -36,9 +36,9 @@ import (
 	"time"
 
 	"github.com/esoptra/v8go"
-
 	"github.com/esoptra/v8go-polyfills/fetch/internal"
 	. "github.com/esoptra/v8go-polyfills/internal"
+	"github.com/esoptra/v8go-polyfills/uuid"
 )
 
 const (
@@ -140,7 +140,7 @@ func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 				return
 			}
 			//store a pointer reference with the fetcher
-			mini := NewUuid()
+			mini := uuid.NewUuid()
 			f.ResponseMap.Store(mini, res.BodyReader)
 			res.Body = mini
 
