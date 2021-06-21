@@ -28,15 +28,38 @@ import (
 	"github.com/esoptra/v8go"
 )
 
-func InjectWith(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) error {
+func InjectWith(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) (*v8go.Context, error) {
 	e := NewEncode(opt...)
 	encodeFnTmp, err := v8go.NewFunctionTemplate(iso, e.TextEncoderFunctionCallback())
 	if err != nil {
-		return fmt.Errorf("v8go-polyfills/textEncoder NewFunctionTemplate: %w", err)
+		return nil, fmt.Errorf("v8go-polyfills/textEncoder NewFunctionTemplate: %w", err)
 	}
-	if err := global.Set("TextEncoder", encodeFnTmp); err != nil {
-		return fmt.Errorf("v8go-polyfills/textEncoder global.set: %w", err)
+	if err := global.Set("TextEncoder1", encodeFnTmp); err != nil {
+		return nil, fmt.Errorf("v8go-polyfills/textEncoder global.set: %w", err)
 	}
 
-	return nil
+	ctx, err := v8go.NewContext(iso, global)
+	if err != nil {
+		return nil, fmt.Errorf("v8go-polyfills/textEncoder newcontext: %w", err)
+	}
+
+	_, err = ctx.RunScript(`class TextEncoder {
+             encode(usvstring){
+                     const encoder = new TextEncoder1();
+                     return encoder.encode(usvstring);
+             }
+             encodeInto(usvstring, utf8) { 
+                     const encoder = new TextEncoder1()
+                     console.log(typeof encoder.encode);
+                     let res = encoder.encode(usvstring)
+                     for (var i =0; i < res.length; i++) {
+                             utf8[i]=res[i]
+                     }
+                     return {read: usvstring.length, written: utf8.length }; 
+             }
+     }`, "encoder.js")
+	if err != nil {
+		return nil, fmt.Errorf("v8go-polyfills/textEncoder Ra(): %w", err)
+	}
+	return ctx, nil
 }

@@ -52,3 +52,28 @@ func InjectWithFetcherTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, f Fetch
 
 	return nil
 }
+
+func InjectWithCtx(ctx *v8go.Context, opt ...Option) error {
+	f := NewFetcher(opt...)
+
+	iso, err := ctx.Isolate()
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
+	}
+
+	fetchFn, err := v8go.NewFunctionTemplate(iso, f.GetFetchFunctionCallback())
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
+	}
+
+	con, err := v8go.NewObjectTemplate(iso)
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/console: %w", err)
+	}
+
+	if err := con.Set("fetch", fetchFn, v8go.ReadOnly); err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
+	}
+
+	return nil
+}
