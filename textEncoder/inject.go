@@ -28,6 +28,7 @@ import (
 	"github.com/esoptra/v8go"
 )
 
+//uses encode func to create encodeinto wrapper method
 func InjectWith(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) (*v8go.Context, error) {
 	e := NewEncode(opt...)
 	encodeFnTmp, err := v8go.NewFunctionTemplate(iso, e.TextEncoderFunctionCallback())
@@ -62,4 +63,16 @@ func InjectWith(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) (
 		return nil, fmt.Errorf("v8go-polyfills/textEncoder Ra(): %w", err)
 	}
 	return ctx, nil
+}
+
+func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) error {
+	e := NewEncode(opt...)
+	encodeFnTmp, err := v8go.NewFunctionTemplate(iso, e.TextEncoderFunctionCallback())
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/textEncoder NewFunctionTemplate: %w", err)
+	}
+	if err := global.Set("TextEncoder", encodeFnTmp); err != nil {
+		return fmt.Errorf("v8go-polyfills/textEncoder global.set: %w", err)
+	}
+	return nil
 }
