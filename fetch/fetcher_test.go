@@ -258,8 +258,7 @@ func testFetchBodyWithLazyLoad(t *testing.T, script string) {
 func TestMultipleFetchWithSequentialResponseConsumptionInJS(t *testing.T) {
 	addr := "localhost:10000"
 	go StartHttpServer(addr)
-	time.Sleep(time.Second * 10)
-	//es.WaitForHost(addr, 10)
+	time.Sleep(time.Second * 5)
 
 	testFetchBodyWithLazyLoad(t, `epsilon = async (event) => {
 		const url = 'http://127.0.0.1:10000/'

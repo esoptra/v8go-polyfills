@@ -34,19 +34,18 @@ func TestInject(t *testing.T) {
 	t.Parallel()
 
 	iso, _ := v8go.NewIsolate()
-	//ctx, _ := v8go.NewContext(iso)
 	global, _ := v8go.NewObjectTemplate(iso)
 
-	ctx, err := InjectWith(iso, global)
+	err := InjectTo(iso, global)
 	if err != nil {
 		t.Error(err)
 	}
 
-	// ctx, err := v8go.NewContext(iso, global)
-	// if err != nil {
-	// 	t.Error(err)
-	// 	return
-	// }
+	ctx, err := v8go.NewContext(iso, global)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if err := console.InjectTo(ctx); err != nil {
 		t.Error(err)
 	}
@@ -57,19 +56,20 @@ func TestInject(t *testing.T) {
 	console.log("=>", view); 
 	console.log(typeof view); //expecting the type as Object (uint8Array)
 
-	const utf8 = new Uint8Array(7);
+	const utf8 = new ArrayBuffer(7);
 	let encodedResults = encoder.encodeInto('H€llo', utf8);
 	console.log("=>", utf8, encodedResults.read, encodedResults.written); 
 	console.log(typeof utf8); //expecting the type as Object (uint8Array)
 
-	view `, "encoder.js")
+	utf8 `, "encoder.js")
 	if err != nil {
 		t.Error(err)
 	}
 
-	ok := val.IsUint8Array()
+	ok := val.IsArrayBuffer()
 	if ok {
-		fmt.Println("returned val is array", val.Object().Value)
+		bytes := val.ArrayBuffer().GetBytes()
+		fmt.Println("returned val is array", bytes)
 	} else {
 		fmt.Println("returned val is not array", val.Object().Value)
 	}

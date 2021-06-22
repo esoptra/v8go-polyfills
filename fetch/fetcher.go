@@ -164,13 +164,18 @@ func (f *Fetch) initRequest(reqUrl string, reqInit internal.RequestInit) (*inter
 	}
 
 	req := &internal.Request{
-		URL:        u,
-		Body:       reqInit.Body,
-		BodyReader: f.InputBody,
+		URL: u,
 		Header: http.Header{
 			"Accept":     []string{"*/*"},
 			"Connection": []string{"close"},
 		},
+	}
+
+	if strings.TrimSpace(reqInit.Body) != "" {
+		req.Body = strings.NewReader(reqInit.Body)
+	} else {
+		//supports end to end streaming
+		req.Body = f.InputBody
 	}
 
 	var ua string
@@ -217,7 +222,7 @@ func (f *Fetch) fetchLocal(r *internal.Request) (*internal.Response, error) {
 
 	var body io.Reader
 	if r.Method != "GET" {
-		body = strings.NewReader(r.Body)
+		body = r.Body
 	}
 
 	req, err := http.NewRequest(r.Method, r.URL.String(), body)
@@ -237,11 +242,7 @@ func (f *Fetch) fetchLocal(r *internal.Request) (*internal.Response, error) {
 func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	var body io.Reader
 	if r.Method != "GET" {
-		if r.BodyReader != nil {
-			body = r.BodyReader
-		} else {
-			body = strings.NewReader(r.Body)
-		}
+		body = r.Body
 	}
 
 	req, err := http.NewRequest(r.Method, r.URL.String(), body)
