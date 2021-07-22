@@ -101,7 +101,6 @@ func (c *Crypto) cryptoVerifyFunctionCallback() v8go.FunctionCallback {
 			}
 
 			if algoName == "RSA-OAEP" && key.Type == "public" {
-				fmt.Println("extract pub key", key.Kid)
 				//this expecting public rsa key
 				pubKey, ok := c.KeyMap.Load(key.Kid)
 				if !ok {
@@ -109,13 +108,12 @@ func (c *Crypto) cryptoVerifyFunctionCallback() v8go.FunctionCallback {
 					return
 				}
 				sign := args[2].Uint8Array()
-				fmt.Println("sign", string(sign))
+				//fmt.Println("sign", string(sign))
 				payload := args[3].Uint8Array()
-				fmt.Println("payload", string(payload))
+				//fmt.Println("payload", string(payload))
 
 				err = jwt.SigningMethodRS256.Verify(string(payload), string(sign), pubKey)
 				passed = (err == nil)
-
 			}
 
 		}()
@@ -175,7 +173,6 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 
 				var key interface{}
 				if algoName == "RSA-OAEP" {
-					fmt.Println("iskeyset", isKeySet)
 					//this expecting public rsa key
 					if isKeySet {
 						keys, err := parseKeySet(keyDataBytes)
@@ -185,7 +182,6 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 						}
 						//select the first key from the set
 						key = keys[0]
-						fmt.Println("public key size==>", keys[0].Size())
 					} else {
 						key, err = parseKey(keyDataBytes)
 						if err != nil {
@@ -196,7 +192,7 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 
 				}
 
-				fmt.Println(key)
+				//fmt.Println(key)
 				miniPub := uuid.NewUuid()
 				c.KeyMap.Store(miniPub, key)
 
@@ -264,10 +260,6 @@ func (c *Crypto) cryptoGenerateKeyFunctionCallback() v8go.FunctionCallback {
 			return iso.ThrowException(fmt.Sprintf("error creating newPromiseResolver with ctx: %#v", err))
 		}
 		go func() {
-
-			// if err != nil {
-			// 	return iso.ThrowException(fmt.Sprintf("error getting Isolate from ctx: %#v", err))
-			// }
 			args := info.Args()
 			if len(args) != 3 {
 				resolver.Reject(newErrorValue(iso, "Expected algorithm, extractable, keyUsages (3) arguments\n"))
@@ -309,21 +301,6 @@ func (c *Crypto) cryptoGenerateKeyFunctionCallback() v8go.FunctionCallback {
 					return
 				}
 
-				fmt.Printf("%v\n", algorithm)
-				// The public key is a part of the *rsa.PrivateKey struct
-				publicKey := privateKey.PublicKey
-				fmt.Printf("%#v", publicKey)
-
-				// jsonKey := jose.JSONWebKey{
-				// 	Key:       privateKey,
-				// 	Algorithm: algoName,
-				// }
-
-				// jsonKeyBytes, err := jsonKey.MarshalJSON()
-				// if err != nil {
-				// 	resolver.Reject(newErrorValue(iso, "error marshalling jsonKey: %#v", err))
-				// 	return
-				// }
 				//store a pointer reference with the fetcher
 				miniPriv := uuid.NewUuid()
 				c.KeyMap.Store(miniPriv, privateKey)
@@ -358,12 +335,6 @@ func (c *Crypto) cryptoGenerateKeyFunctionCallback() v8go.FunctionCallback {
 				resolver.Reject(newErrorValue(iso, "error jsonParse on result: %#v", err))
 				return
 			}
-
-			// v, err := v8go.NewValue(iso, result)
-			// if err != nil {
-			// 	resolver.Reject(newErrorValue(iso, "error new value for generateKey: %#v", err))
-			// 	return
-			// }
 
 			resolver.Resolve(v)
 		}()
@@ -400,7 +371,7 @@ func getAlgorithm(v *v8go.Value) (interface{}, string, error) {
 	var result interface{}
 	if algoName.String() == "RSA-OAEP" {
 		rsa := &RSAAlgo{}
-		fmt.Println(string(res))
+		//fmt.Println(string(res))
 		err = json.Unmarshal(res, rsa)
 		if err != nil {
 			return nil, "", fmt.Errorf("Error UnMarshalling algorithm:%#v\n", err)

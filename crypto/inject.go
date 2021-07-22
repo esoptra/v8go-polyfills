@@ -78,20 +78,6 @@ func InjectWith(iso *v8go.Isolate, ctx *v8go.Context, opt ...Option) error {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
 
-	// importKeyFn, err := v8go.NewFunctionTemplate(iso, c.cryptoImportKeyFunctionCallback())
-	// if err != nil {
-	// 	return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	// }
-
-	// if err := con.Set("importKey", importKeyFn, v8go.ReadOnly); err != nil {
-	// 	return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	// }
-
-	// ctx, err := v8go.NewContext(iso, global)
-	// if err != nil {
-	// 	return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	// }
-
 	con1, err := v8go.NewObjectTemplate(iso)
 	if err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
@@ -100,21 +86,7 @@ func InjectWith(iso *v8go.Isolate, ctx *v8go.Context, opt ...Option) error {
 	if err := con1.Set("subtle", con); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
-	/*
-		con1, err := v8go.NewObjectTemplate(iso)
-		if err != nil {
-			return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-		}
 
-		if err := con1.Set("subtle", conObj); err != nil {
-			return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-		}
-
-		conObj1, err := con1.NewInstance(ctx)
-		if err != nil {
-			return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-		}
-	*/
 	conObj, err := con1.NewInstance(ctx)
 	if err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
@@ -123,14 +95,6 @@ func InjectWith(iso *v8go.Isolate, ctx *v8go.Context, opt ...Option) error {
 	if err := ctx.Global().Set("crypto", conObj); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
-
-	_, err = ctx.RunScript(`function Raj(){
-		console.log('RAJESH');
-		}`, "crypto.js")
-	if err != nil {
-		fmt.Println("err run raj()", err)
-	}
-	// ctx1, _ := v8go.NewContext(iso)
 
 	return nil
 }
@@ -174,21 +138,7 @@ func InjectTo(ctx *v8go.Context, opt ...Option) error {
 	if err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
-	/*
-		con1, err := v8go.NewObjectTemplate(iso)
-		if err != nil {
-			return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-		}
 
-		if err := con1.Set("subtle", conObj); err != nil {
-			return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-		}
-
-		conObj1, err := con1.NewInstance(ctx)
-		if err != nil {
-			return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-		}
-	*/
 	global := ctx.Global()
 
 	if err := global.Set("crypto", conObj); err != nil {

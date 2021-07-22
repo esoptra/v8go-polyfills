@@ -201,7 +201,7 @@ func testFetchBodyWithLazyLoad(t *testing.T, script string) {
 	Promise.resolve(res)
 	`
 
-	fmt.Println(fn)
+	//fmt.Println(fn)
 	val, err := ctx.RunScript(fn, "fetch_json.js")
 	if err != nil {
 		t.Error(err)

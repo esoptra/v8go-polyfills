@@ -23,7 +23,6 @@
 package crypto
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/esoptra/v8go"
@@ -50,11 +49,6 @@ func TestCrypto(t *testing.T) {
 		t.Error(err)
 	}
 
-	// ctx, err := v8go.NewContext(iso, con)
-	// if err != nil {
-	// 	t.Error(err)
-	// 	return
-	// }
 	if err := InjectWith(iso, ctx); err != nil {
 		t.Error(err)
 		return
@@ -72,8 +66,6 @@ func TestCrypto(t *testing.T) {
 			  return await keysData.json();
 			};
 
-			Raj();
-			Ra();
 			epsilon = async (event) => {
 	
  	let data = await fetchKeys()
@@ -85,7 +77,7 @@ func TestCrypto(t *testing.T) {
 		hash: "SHA-256"
 	  };
 	let importedKey = await crypto.subtle.importKey('jwk', data, algo, true, ["encrypt", "decrypt"]);
-	console.log(importedKey.kid);
+	//console.log(importedKey.kid);
 
 	const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Im5PbzNaRHJPRFhFSzFqS1doWHNsSFJfS1hFZyJ9.eyJhdWQiOiIwOGQ0NWY3Zi0xNmM5LTQ1ZGUtYmFkZC05NDc3ZGRjZTVlMzYiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vZWMxMDAyZDctMDM0OC00MGFlLWFlNGUtOTBjMDA1MDZlYWNkL3YyLjAiLCJpYXQiOjE2MjM3NDMzNDcsIm5iZiI6MTYyMzc0MzM0NywiZXhwIjoxNjIzNzQ3MjQ3LCJhaW8iOiJBV1FBbS84VEFBQUFtbEJHSkpMT25BbllSMFRTVFUvdS9NQzhQNDdTSWJncWltY0xva1B0OFpLbGpvdW5IdmJ3M0d4UHJqTnlWNDkrbW5JTUhUNW84R2tXSHprelN4Qk5QSE0vWmVDWFdSc0FITmxtNW1oTURaWEMvWkJ5N3UwT0xVbTMrU0ZBSWR0NiIsImlkcCI6Imh0dHBzOi8vc3RzLndpbmRvd3MubmV0LzU2OTc1MzBiLWRmYzMtNDhlZi1iMWFjLTk4ZTRmZTY4MTI1Mi8iLCJuYW1lIjoiYmFja2tlbSIsIm9pZCI6IjIyNjZhMGYxLWFiZWYtNGRmNC1hY2UwLTNhZDk4NTcxOWRjMCIsInByZWZlcnJlZF91c2VybmFtZSI6Ik1pY2hpZWwuZGViYWNra2VyQHR3aW50YWcuY29tIiwicmgiOiIwLkFRd0Exd0lRN0VnRHJrQ3VUcERBQlFicXpYOWYxQWpKRnQ1RnV0MlVkOTNPWGpZTUFLVS4iLCJzdWIiOiJRR1BSamZrWUhaLTl2MFlrU2lQdm1YX3BhQTAzYzRDbGZrcUlkQWpoMDFvIiwidGlkIjoiZWMxMDAyZDctMDM0OC00MGFlLWFlNGUtOTBjMDA1MDZlYWNkIiwidXRpIjoiOHRaWlB1WHdQVUtPRUVLOGhraWxBQSIsInZlciI6IjIuMCJ9.j58zhFkqOPtcxB-gA1LdLYJYQw_oVZ2vDiZXD6M9nZNWbgAmFFkvN7CuhQFYR5rM9XaGrO-Rn4X6X389aFk-sZKQUOtVqmW4VT8_yT2iSGVspL5BcwWYeR0vEjO_5UNoavSunXz_qOFzzQqUYZ2-ex3KG9x7cL1Tc1kVv2JmAtUB-yK5t5yZU1BzNteIDCC4QEUa_vBxZrTwVEkRW_fT26TonWZTikYvi80COSFlMRiDD-gK2QFHrjcyPvhETTYDzXYhHoJDolcey59ERu9301SE9flTMigVpJlL5SreMIWhy1-vWt5lbCPOA246o3hEa_HAmAVgIdC1t1tSsj61hw'
 	const splitToken = token.split('.')
@@ -96,11 +88,13 @@ func TestCrypto(t *testing.T) {
 
 	let isvalid = await crypto.subtle.verify(algo, importedKey, signature, payload)
 	
+	//console.log(isvalid)
+
 	let returnVal = 'failed'
 	if (isvalid){
 		returnVal = 'success'
 	}
-	returnVal;
+	return returnVal;
 	};
 	let res = epsilon();
 	Promise.resolve(res)`, "crypto.js")
@@ -119,41 +113,9 @@ func TestCrypto(t *testing.T) {
 	}
 
 	res := proms.Result().String()
-
-	fmt.Println("returned val is", res)
-}
-
-func TestInject(t *testing.T) {
-	t.Parallel()
-
-	iso, _ := v8go.NewIsolate()
-	ctx, _ := v8go.NewContext(iso)
-
-	// global, err := v8go.NewObjectTemplate(iso)
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-
-	if err := InjectTo(ctx); err != nil {
-		t.Error(err)
+	//fmt.Println("returned val is", res)
+	if res != "success" {
+		t.Errorf("Expected success; received %q", res)
 	}
-
-	// ctx1, err := v8go.NewContext(iso, global)
-	// if err != nil {
-	// 	t.Error(err)
-	// 	return
-	// }
-	// if err := console.InjectTo(ctx1); err != nil {
-	// 	t.Error(err)
-	// }
-
-	val, err := ctx.RunScript(`let view = await crypto.verify('test')
-	console.log("=>", view); 
-	view `, "encoder.js")
-	if err != nil {
-		t.Error(err)
-	}
-
-	fmt.Println("returned val is", val.String())
 
 }
