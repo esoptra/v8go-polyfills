@@ -42,7 +42,7 @@ func parseKeySet(keySetDataBytes []byte) ([]*rsa.PublicKey, error) {
 		if err := key.Raw(&rawkey); err != nil {
 			return nil, fmt.Errorf("failed to create public key: %#v", err)
 		}
-		fmt.Println("=>", key.KeyID())
+		//fmt.Println("=>", key.KeyID())
 		// We know this is an RSA Key so...
 		rsa, ok := rawkey.(*rsa.PublicKey)
 		if !ok {

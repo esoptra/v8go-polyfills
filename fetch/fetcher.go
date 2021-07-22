@@ -70,7 +70,7 @@ type Fetch struct {
 
 	UserAgentProvider UserAgentProvider
 	AddrLocal         string
-	ResponseMap       sync.Map
+	ResponseMap       *sync.Map
 	InputBody         io.ReadCloser
 }
 
@@ -79,6 +79,7 @@ func NewFetcher(opt ...Option) *Fetch {
 		LocalHandler:      defaultLocalHandler,
 		UserAgentProvider: defaultUserAgentProvider,
 		AddrLocal:         AddrLocal,
+		ResponseMap:       &sync.Map{},
 	}
 
 	for _, o := range opt {
