@@ -26,6 +26,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"sync"
 )
 
 type UserAgentProvider interface {
@@ -69,5 +70,11 @@ func WithAddrLocal(addr string) Option {
 func WithRequestBody(body io.ReadCloser) Option {
 	return optionFunc(func(ft *Fetch) {
 		ft.InputBody = body
+	})
+}
+
+func WithResponseMap(resMap *sync.Map) Option {
+	return optionFunc(func(ft *Fetch) {
+		ft.ResponseMap = resMap
 	})
 }
