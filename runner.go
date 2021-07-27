@@ -59,9 +59,9 @@ func NewRunner(iso *v8go.Isolate, global *v8go.ObjectTemplate) (*Runner, error) 
 
 // RunPromise runs a function that resolves a promise and waits for the
 // promise to resolve, reject or for the context to timeout.
+// Make sure the script includes 'let res = epsilon(data);'
 func (r *Runner) RunPromise(ctx context.Context, v8ctx *v8go.Context, script string) (*v8go.Value, error) {
 	code := script + `
-	let res = epsilon();
 	Promise.resolve(res)`
 
 	jsCode := code + ".then(resToGo).catch(errToGo)"
