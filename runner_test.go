@@ -20,6 +20,9 @@ func TestRunPromise(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	script := `epsilon = async (event) => {
+		let hed = new Headers()
+		hed.append("X-Client-Name", "twintag.js")
+		console.log(hed.get('X-Client-Name'))
 		const url = 'http://127.0.0.1:10001/'
 		let resp = await fetch(url)
 		let respText = await resp.text()
@@ -56,27 +59,11 @@ func TestRunPromise(t *testing.T) {
 		panic(err)
 	}
 
-	fn := `function Response(body, init){
-		console.log("Response >> "+body)
-		if(init == null || init == undefined){
-			init =  { "status": 200, "statusText": "OK" }
-		}
-		if(body == null || body == undefined){
-			this.body = ''
-		}else if (body.body){
-			this.body = body.body
-		}else{
-			this.body = body
-		}
-		this.status = init.status
-		this.statusText = init.statusText
-		this.headers = init.headers
+	if err := fetch.InjectHTTPProperties(ctx); err != nil {
+		panic(err)
 	}
-	` + script
 
-	//fmt.Println(fn)
-
-	val, err := runner.RunPromise(ctxCn, ctx, fn)
+	val, err := runner.RunPromise(ctxCn, ctx, script)
 	if err != nil {
 		t.Error(err)
 		return

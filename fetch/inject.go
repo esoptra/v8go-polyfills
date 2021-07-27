@@ -23,10 +23,23 @@
 package fetch
 
 import (
+	_ "embed"
 	"fmt"
 
 	"github.com/esoptra/v8go"
 )
+
+//go:embed internal/headers.js
+var headers string
+
+//go:embed internal/response.js
+var response string
+
+//go:embed internal/body.js
+var body string
+
+//go:embed internal/request.js
+var request string
 
 func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) error {
 	f := NewFetcher(opt...)
@@ -75,5 +88,28 @@ func InjectWithCtx(ctx *v8go.Context, opt ...Option) error {
 		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 	}
 
+	return nil
+}
+
+func InjectHTTPProperties(ctx *v8go.Context) error {
+	_, err := ctx.RunScript(headers, "headers.js")
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/headers inject: %w", err)
+	}
+
+	_, err = ctx.RunScript(response, "response.js")
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/response inject: %w", err)
+	}
+
+	_, err = ctx.RunScript(body, "body.js")
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/body inject: %w", err)
+	}
+
+	_, err = ctx.RunScript(request, "request.js")
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/request inject: %w", err)
+	}
 	return nil
 }
