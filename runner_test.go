@@ -24,7 +24,9 @@ func TestRunPromise(t *testing.T) {
 		let resp = await fetch(url)
 		let respText = await resp.text()
 		return new Response(respText)
-	}`
+	}
+	let res = epsilon();
+	`
 
 	ctxCn, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*15))
 	defer cancel()
