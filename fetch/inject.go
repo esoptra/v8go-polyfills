@@ -52,7 +52,14 @@ func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) err
 	if err := global.Set("fetch", fetchFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 	}
+	RequestFn, err := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
+	}
 
+	if err := global.Set("Request", RequestFn, v8go.ReadOnly); err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
+	}
 	return nil
 }
 
@@ -64,6 +71,15 @@ func InjectWithFetcherTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, f Fetch
 
 	if err := global.Set("fetch", fetchFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
+	}
+
+	RequestFn, err := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
+	}
+
+	if err := global.Set("Request", RequestFn, v8go.ReadOnly); err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
 	}
 
 	return nil
@@ -90,7 +106,14 @@ func InjectWithCtx(ctx *v8go.Context, opt ...Option) error {
 	if err := con.Set("fetch", fetchFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 	}
+	RequestFn, err := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
+	}
 
+	if err := con.Set("Request", RequestFn, v8go.ReadOnly); err != nil {
+		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
+	}
 	return nil
 }
 
@@ -105,14 +128,14 @@ func InjectHTTPProperties(ctx *v8go.Context) error {
 		return fmt.Errorf("v8go-polyfills/response inject: %w", err)
 	}
 
-	_, err = ctx.RunScript(body, "body.js")
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/body inject: %w", err)
-	}
+	// _, err = ctx.RunScript(body, "body.js")
+	// if err != nil {
+	// 	return fmt.Errorf("v8go-polyfills/body inject: %w", err)
+	// }
 
-	_, err = ctx.RunScript(request, "request.js")
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/request inject: %w", err)
-	}
+	// _, err = ctx.RunScript(request, "request.js")
+	// if err != nil {
+	// 	return fmt.Errorf("v8go-polyfills/request inject: %w", err)
+	// }
 	return nil
 }

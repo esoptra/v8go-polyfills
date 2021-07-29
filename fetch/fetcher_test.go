@@ -179,6 +179,9 @@ func testFetchBodyWithLazyLoad(t *testing.T, script string) {
 	if err := console.InjectTo(ctx); err != nil {
 		panic(err)
 	}
+	if err := InjectHTTPProperties(ctx); err != nil {
+		panic(err)
+	}
 
 	fn := `function Response(body, init){
 		console.log("Response >> "+body)
@@ -261,29 +264,29 @@ func TestMultipleFetchWithSequentialResponseConsumptionInJS(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	testFetchBodyWithLazyLoad(t, `epsilon = async (event) => {
-		const url = 'http://127.0.0.1:10000/'
-		let resp = await fetch(url)
-		let out = await resp.text()
-		console.log(">> "+out)
-		const url1 = 'http://127.0.0.1:10000/public'
-		let resp1 = await fetch(url1)
-		//let resp1text = await resp1.text()
-		//console.log(">> "+resp1text)
-		//multiple fetch with all response consumed multiple times in script
-		return new Response(resp1)
-	}`)
+			const url = 'http://127.0.0.1:10000/'
+			let resp = await fetch(url)
+			let out = await resp.text()
+			console.log(">> "+out)
+			const url1 = 'http://127.0.0.1:10000/public'
+			let resp1 = await fetch(url1)
+			//let resp1text = await resp1.text()
+			//console.log(">> "+resp1text)
+			//multiple fetch with all response consumed multiple times in script
+			return new Response(resp1)
+		}`)
 
 	time.Sleep(time.Second * 5)
 	testFetchBodyWithLazyLoad(t, `epsilon = async (event) => {
-		const url = 'http://127.0.0.1:10000/'
-		let resp = await fetch(url)
-		
-		const url1 = 'http://127.0.0.1:10000/public'
-		let resp1 = await fetch(url1)
-		
-		//multiple fetch with all response consumed multiple times in script
-		return new Response(resp)
-	}`)
+			const url = 'http://127.0.0.1:10000/'
+			let resp = await fetch(url)
+
+			const url1 = 'http://127.0.0.1:10000/public'
+			let resp1 = await fetch(url1)
+
+			//multiple fetch with all response consumed multiple times in script
+			return new Response(resp)
+		}`)
 	// es.Expectf(err == nil, "Error %#v", err)
 	// es.Expectf(resp != nil, "expected not nil")
 	// es.Expectf(strings.ToLower(resp.Status) == "200", "unexpected status %q", resp.Status)
