@@ -20,6 +20,26 @@ func TestRunPromise(t *testing.T) {
 	time.Sleep(time.Second * 5)
 
 	runTestRunner(t, `epsilon = async (event) => {
+		const headers = new Headers()
+        headers.append("Authorization", "Basic dGVzdDp0ZXN0");
+        headers.append("X-Client-Name", "twintag.js");
+        headers.append("X-Client-Version", "12.3.4");
+
+		let options = {
+			method: 'GET',
+        	headers: headers,
+        	body: 'hello twintag',
+			redirect: 'manual'
+		}
+		let path = "http://127.0.0.1:10001/auth"
+		console.log('calling fetch', path)
+		const resp = await fetch(path, options);
+		return new Response(resp)
+		}
+		let res = epsilon();
+		`)
+
+	runTestRunner(t, `epsilon = async (event) => {
 		let hed = new Headers()
 		hed.append("X-Client-Name", "twintag.js")
 		console.log(hed.get('X-Client-Name'))
@@ -64,7 +84,6 @@ func TestRunPromise(t *testing.T) {
 		}
 		let res = epsilon();
 		`)
-
 }
 
 func runTestRunner(t *testing.T, script string) {
@@ -118,7 +137,6 @@ func runTestRunner(t *testing.T, script string) {
 		return
 	}
 	//fmt.Println("status : ", status.String())
-
 	body, err := res.Get("body")
 	if err != nil {
 		t.Error(err)
