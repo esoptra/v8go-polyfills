@@ -20,7 +20,7 @@ func NewRunner(iso *v8go.Isolate, global *v8go.ObjectTemplate) (*Runner, error) 
 
 	errFun := func() v8go.FunctionCallback {
 		return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
-			fmt.Println("errToGo")
+			//fmt.Println("errToGo")
 			args := info.Args()
 			errCh <- args[0]
 			return nil
@@ -29,7 +29,7 @@ func NewRunner(iso *v8go.Isolate, global *v8go.ObjectTemplate) (*Runner, error) 
 
 	resFun := func() v8go.FunctionCallback {
 		return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
-			fmt.Println("resToGo")
+			//fmt.Println("resToGo")
 			args := info.Args()
 			resCh <- args[0]
 			return nil
