@@ -108,30 +108,29 @@ func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 			}
 
 			var reqInit internal.RequestInit
+			var err error
 			if len(args) > 1 {
-				str, err := v8go.JSONStringify(ctx, args[1])
+				res, err := getRequestInit(ctx, args[1])
 				if err != nil {
 					resolver.Reject(newErrorValue(ctx, err))
 					return
 				}
-
-				reader := strings.NewReader(str)
-				if err := json.NewDecoder(reader).Decode(&reqInit); err != nil {
-					resolver.Reject(newErrorValue(ctx, err))
-					return
+				if res != nil {
+					reqInit = *res
 				}
 			}
 
 			val := args[0]
 			var u *url.URL
-			var err error
 			if val.IsString() {
+				//this happens when invoked as: fetch(url)
 				u, err = url.Parse(val.String())
 				if err != nil {
 					resolver.Reject(newErrorValue(ctx, err))
 					return
 				}
 			} else {
+				//this happens when invoked as: fetch(new Request(url, options))
 				uri, err := val.MarshalJSON()
 				if err != nil {
 					resolver.Reject(newErrorValue(ctx, err))
@@ -496,6 +495,91 @@ func UserAgent() string {
 	return fmt.Sprintf("v8go-polyfills/%s (v8go/%s)", Version, v8go.Version())
 }
 
+func getRequestInit(ctx *v8go.Context, options *v8go.Value) (*internal.RequestInit, error) {
+	str, err := v8go.JSONStringify(ctx, options)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to JSONStringify: %v", err)
+	}
+
+	var reqInit internal.RequestInit
+	reader := strings.NewReader(str)
+	if err := json.NewDecoder(reader).Decode(&reqInit); err != nil {
+		if c, ok := err.(*json.UnmarshalTypeError); ok && c.Struct == "RequestInit" && c.Field == "headers" {
+			//this happens when invoked as: fetch(url, options) with JS headers
+			reqInitObj, err := options.AsObject()
+			if err != nil {
+				return nil, fmt.Errorf("Error parsing args[1] as JSON: %#v", err)
+			}
+
+			//assign method from reqInit
+			if reqInitObj.Has("method") {
+				method, err := reqInitObj.Get("method")
+				if err != nil {
+					return nil, fmt.Errorf("Error parsing method from args[1] as obj: %#v", err)
+				}
+				reqInit.Method = method.String()
+			}
+
+			//assign body from reqInit
+			if reqInitObj.Has("body") {
+				body, err := reqInitObj.Get("body")
+				if err != nil {
+					return nil, fmt.Errorf("Error parsing body from args[1] as obj: %#v", err)
+				}
+				if body.String() != "null" {
+					reqInit.Body = body.String()
+				}
+			}
+			//assign redirect from reqInit
+			if reqInitObj.Has("redirect") {
+				redirect, err := reqInitObj.Get("redirect")
+				if err != nil {
+					return nil, fmt.Errorf("Error parsing redirect from args[1] as obj: %#v", err)
+				}
+				reqInit.Redirect = redirect.String()
+			}
+
+			//assign headers from reqInit
+			if reqInitObj.Has("headers") {
+				headersVal, err := reqInitObj.Get("headers")
+				if err != nil {
+					return nil, fmt.Errorf("Error parsing headers from args[1] as value: %#v", err)
+				}
+
+				if headersVal.String() != "null" {
+					headers, err := headersVal.AsObject()
+					if err != nil {
+						return nil, fmt.Errorf("Error parsing headers from args[1] as obj: %#v", err)
+					}
+					if headers.Has("map") {
+						headersMap, err := headers.Get("map")
+						if err != nil {
+							return nil, fmt.Errorf("Error parsing headersMap from args[1] as obj: %#v", err)
+						}
+						if headersMap.String() != "null" {
+							headersMapString, err := headersMap.MarshalJSON()
+							if err != nil {
+								return nil, fmt.Errorf("Error marshalling headersMap from args[1] as json: %#v", err)
+							}
+							var goHeadersMap map[string]string
+							reader := strings.NewReader(string(headersMapString))
+							if err := json.NewDecoder(reader).Decode(&goHeadersMap); err != nil {
+								return nil, fmt.Errorf("Error decoding JSON args[1].headers.map as map[string]string: %#v", err)
+							}
+							reqInit.Headers = goHeadersMap
+						}
+					}
+				}
+			}
+		} else {
+			return nil, fmt.Errorf("Failed to Decode: %v", err)
+		}
+	}
+
+	return &reqInit, nil
+
+}
+
 func RequestCallbackFunc(info *v8go.FunctionCallbackInfo) *v8go.Value {
 	args := info.Args()
 	ctx := info.Context()
@@ -516,70 +600,15 @@ func RequestCallbackFunc(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		Url: uri,
 	}
 	if len(args) > 1 {
-		reqInitObj, err := args[1].AsObject()
+		reqInit, err := getRequestInit(ctx, args[1])
 		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error parsing args[1] as JSON: %#v", err))
+			return iso.ThrowException(fmt.Sprintf("Error getRequestInit: %#v", err))
 		}
-
-		//assign method from reqInit
-		if reqInitObj.Has("method") {
-			method, err := reqInitObj.Get("method")
-			if err != nil {
-				return iso.ThrowException(fmt.Sprintf("Error parsing method from args[1] as obj: %#v", err))
-			}
-			res.Method = method.String()
-		}
-
-		//assign body from reqInit
-		if reqInitObj.Has("body") {
-			body, err := reqInitObj.Get("body")
-			if err != nil {
-				return iso.ThrowException(fmt.Sprintf("Error parsing body from args[1] as obj: %#v", err))
-			}
-			if body.String() != "null" {
-				res.Body = body.String()
-			}
-		}
-		//assign redirect from reqInit
-		if reqInitObj.Has("redirect") {
-			redirect, err := reqInitObj.Get("redirect")
-			if err != nil {
-				return iso.ThrowException(fmt.Sprintf("Error parsing redirect from args[1] as obj: %#v", err))
-			}
-			res.Redirect = redirect.String()
-		}
-
-		//assign headers from reqInit
-		if reqInitObj.Has("headers") {
-			headersVal, err := reqInitObj.Get("headers")
-			if err != nil {
-				return iso.ThrowException(fmt.Sprintf("Error parsing headers from args[1] as value: %#v", err))
-			}
-
-			if headersVal.String() != "null" {
-				headers, err := headersVal.AsObject()
-				if err != nil {
-					return iso.ThrowException(fmt.Sprintf("Error parsing headers from args[1] as obj: %#v", err))
-				}
-				if headers.Has("map") {
-					headersMap, err := headers.Get("map")
-					if err != nil {
-						return iso.ThrowException(fmt.Sprintf("Error parsing headersMap from args[1] as obj: %#v", err))
-					}
-					if headersMap.String() != "null" {
-						headersMapString, err := headersMap.MarshalJSON()
-						if err != nil {
-							return iso.ThrowException(fmt.Sprintf("Error marshalling headersMap from args[1] as json: %#v", err))
-						}
-						var goHeadersMap map[string]string
-						reader := strings.NewReader(string(headersMapString))
-						if err := json.NewDecoder(reader).Decode(&goHeadersMap); err != nil {
-							return iso.ThrowException(fmt.Sprintf("Error decoding JSON args[1].headers.map as map[string]string: %#v", err))
-						}
-						res.Headers = goHeadersMap
-					}
-				}
-			}
+		if reqInit != nil {
+			res.Method = reqInit.Method
+			res.Body = reqInit.Body
+			res.Redirect = reqInit.Redirect
+			res.Headers = reqInit.Headers
 		}
 	}
 
