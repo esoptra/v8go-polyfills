@@ -19,7 +19,7 @@ func TestRunPromise(t *testing.T) {
 	go fetch.StartHttpServer(addr)
 	time.Sleep(time.Second * 5)
 
-	script := `epsilon = async (event) => {
+	runTestRunner(t, `epsilon = async (event) => {
 		let hed = new Headers()
 		hed.append("X-Client-Name", "twintag.js")
 		console.log(hed.get('X-Client-Name'))
@@ -29,7 +29,31 @@ func TestRunPromise(t *testing.T) {
 		return new Response(respText)
 	}
 	let res = epsilon();
-	`
+	`)
+
+	runTestRunner(t, `epsilon = async (event) => {
+		const headers = new Headers()
+        headers.append("Authorization", "Basic dGVzdDp0ZXN0");
+        headers.append("X-Client-Name", "twintag.js");
+        headers.append("X-Client-Version", "12.3.4");
+
+		let options = {
+			method: 'GET',
+        	headers: headers,
+        	body: 'hello twintag',
+			redirect: 'manual'
+		}
+		let path = "http://127.0.0.1:10001/auth"
+		console.log('calling fetch', path)
+		const resp = await fetch(new Request(path, options));
+		return new Response(resp)
+		}
+		let res = epsilon();
+		`)
+
+}
+
+func runTestRunner(t *testing.T, script string) {
 
 	ctxCn, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*15))
 	defer cancel()

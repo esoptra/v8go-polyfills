@@ -47,6 +47,14 @@ type RequestInit struct {
 	Redirect string            `json:"redirect"`
 }
 
+type JSRequestInit struct {
+	Url      string            `json:"url"`
+	Body     string            `json:"body"`
+	Headers  map[string]string `json:"headers"`
+	Method   string            `json:"method"`
+	Redirect string            `json:"redirect"`
+}
+
 /*
  Request is the request object used by fetch
 */
@@ -76,7 +84,7 @@ func ParseRequestURL(rawURL string) (*url.URL, error) {
 	case "http", "https":
 	case "": // then scheme is empty, it's a local request
 		if !strings.HasPrefix(u.Path, "/") {
-			return nil, fmt.Errorf("unsupported relatve path %s", u.Path)
+			return nil, fmt.Errorf("unsupported relative path %s", u.Path)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported scheme %s", u.Scheme)
