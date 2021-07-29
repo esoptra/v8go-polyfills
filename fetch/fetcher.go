@@ -510,49 +510,65 @@ func RequestCallbackFunc(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		}
 
 		//assign method from reqInit
-		method, err := reqInitObj.Get("method")
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error parsing method from args[1] as obj: %#v", err))
+		if reqInitObj.Has("method") {
+			method, err := reqInitObj.Get("method")
+			if err != nil {
+				return iso.ThrowException(fmt.Sprintf("Error parsing method from args[1] as obj: %#v", err))
+			}
+			res.Method = method.String()
 		}
-		res.Method = method.String()
 
 		//assign body from reqInit
-		body, err := reqInitObj.Get("body")
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error parsing body from args[1] as obj: %#v", err))
+		if reqInitObj.Has("body") {
+			body, err := reqInitObj.Get("body")
+			if err != nil {
+				return iso.ThrowException(fmt.Sprintf("Error parsing body from args[1] as obj: %#v", err))
+			}
+			if body.String() != "null" {
+				res.Body = body.String()
+			}
 		}
-		res.Body = body.String()
-
 		//assign redirect from reqInit
-		redirect, err := reqInitObj.Get("redirect")
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error parsing redirect from args[1] as obj: %#v", err))
+		if reqInitObj.Has("redirect") {
+			redirect, err := reqInitObj.Get("redirect")
+			if err != nil {
+				return iso.ThrowException(fmt.Sprintf("Error parsing redirect from args[1] as obj: %#v", err))
+			}
+			res.Redirect = redirect.String()
 		}
-		res.Redirect = redirect.String()
 
 		//assign headers from reqInit
-		headersVal, err := reqInitObj.Get("headers")
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error parsing headers from args[1] as value: %#v", err))
+		if reqInitObj.Has("headers") {
+			headersVal, err := reqInitObj.Get("headers")
+			if err != nil {
+				return iso.ThrowException(fmt.Sprintf("Error parsing headers from args[1] as value: %#v", err))
+			}
+
+			if headersVal.String() != "null" {
+				headers, err := headersVal.AsObject()
+				if err != nil {
+					return iso.ThrowException(fmt.Sprintf("Error parsing headers from args[1] as obj: %#v", err))
+				}
+				if headers.Has("map") {
+					headersMap, err := headers.Get("map")
+					if err != nil {
+						return iso.ThrowException(fmt.Sprintf("Error parsing headersMap from args[1] as obj: %#v", err))
+					}
+					if headersMap.String() != "null" {
+						headersMapString, err := headersMap.MarshalJSON()
+						if err != nil {
+							return iso.ThrowException(fmt.Sprintf("Error marshalling headersMap from args[1] as json: %#v", err))
+						}
+						var goHeadersMap map[string]string
+						reader := strings.NewReader(string(headersMapString))
+						if err := json.NewDecoder(reader).Decode(&goHeadersMap); err != nil {
+							return iso.ThrowException(fmt.Sprintf("Error decoding JSON args[1].headers.map as map[string]string: %#v", err))
+						}
+						res.Headers = goHeadersMap
+					}
+				}
+			}
 		}
-		headers, err := headersVal.AsObject()
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error parsing headers from args[1] as obj: %#v", err))
-		}
-		headersMap, err := headers.Get("map")
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error parsing headersMap from args[1] as obj: %#v", err))
-		}
-		headersMapString, err := headersMap.MarshalJSON()
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error marshalling headersMap from args[1] as json: %#v", err))
-		}
-		var goHeadersMap map[string]string
-		reader := strings.NewReader(string(headersMapString))
-		if err := json.NewDecoder(reader).Decode(&goHeadersMap); err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error decoding JSON args[1].headers.map as map[string]string: %#v", err))
-		}
-		res.Headers = goHeadersMap
 	}
 
 	data, err := json.Marshal(res)

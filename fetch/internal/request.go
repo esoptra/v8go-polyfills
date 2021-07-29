@@ -48,11 +48,11 @@ type RequestInit struct {
 }
 
 type JSRequestInit struct {
-	Url      string            `json:"url"`
-	Body     string            `json:"body"`
-	Headers  map[string]string `json:"headers"`
-	Method   string            `json:"method"`
-	Redirect string            `json:"redirect"`
+	Url      string            `json:"url,omitempty"`
+	Body     string            `json:"body,omitempty"`
+	Headers  map[string]string `json:"headers,omitempty"`
+	Method   string            `json:"method,omitempty"`
+	Redirect string            `json:"redirect,omitempty"`
 }
 
 /*

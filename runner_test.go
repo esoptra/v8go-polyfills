@@ -51,6 +51,20 @@ func TestRunPromise(t *testing.T) {
 		let res = epsilon();
 		`)
 
+	runTestRunner(t, `epsilon = async (event) => {
+		let options = {
+			method: 'GET',
+        	headers: null,
+			redirect: ''
+		}
+		let path = "http://127.0.0.1:10001/auth"
+		console.log('calling fetch', path)
+		const resp = await fetch(new Request(path, options));
+		return new Response(resp)
+		}
+		let res = epsilon();
+		`)
+
 }
 
 func runTestRunner(t *testing.T, script string) {
