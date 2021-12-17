@@ -25,15 +25,18 @@ package polyfills
 import (
 	"github.com/esoptra/v8go-polyfills/base64"
 	"github.com/esoptra/v8go-polyfills/console"
+	"github.com/esoptra/v8go-polyfills/crypto"
 	"github.com/esoptra/v8go-polyfills/fetch"
 	"github.com/esoptra/v8go-polyfills/internal"
+	"github.com/esoptra/v8go-polyfills/textDecoder"
+	"github.com/esoptra/v8go-polyfills/textEncoder"
 	"github.com/esoptra/v8go-polyfills/timers"
 	"github.com/esoptra/v8go-polyfills/url"
 
 	"github.com/esoptra/v8go"
 )
 
-func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...interface{}) error {
+func InjectToGlobalObjectWithCustomFetch(iso *v8go.Isolate, global *v8go.ObjectTemplate, fetcher *fetch.Fetch, opt ...interface{}) error {
 	var fetchOpts []fetch.Option
 
 	for _, o := range opt {
@@ -58,6 +61,37 @@ func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ..
 	return nil
 }
 
+func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...interface{}) error {
+	var fetchOpts []fetch.Option
+
+	for _, o := range opt {
+		switch t := o.(type) {
+		case fetch.Option:
+			fetchOpts = append(fetchOpts, t)
+		}
+	}
+
+	if err := fetch.InjectTo(iso, global, fetchOpts...); err != nil {
+		return err
+	}
+
+	if err := base64.InjectTo(iso, global); err != nil {
+		return err
+	}
+
+	if err := timers.InjectTo(iso, global); err != nil {
+		return err
+	}
+
+	if err := textEncoder.InjectTo(iso, global); err != nil {
+		return err
+	}
+	if err := textDecoder.InjectWith(iso, global); err != nil {
+		return err
+	}
+	return nil
+}
+
 func InjectToContext(ctx *v8go.Context, opt ...interface{}) error {
 	var consoleOpts []console.Option
 
@@ -79,7 +113,9 @@ func InjectToContext(ctx *v8go.Context, opt ...interface{}) error {
 	if err := console.InjectTo(ctx, consoleOpts...); err != nil {
 		return err
 	}
-
+	if err := crypto.InjectTo(ctx); err != nil {
+		return err
+	}
 	return nil
 }
 
