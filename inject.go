@@ -58,6 +58,13 @@ func InjectToGlobalObjectWithCustomFetch(iso *v8go.Isolate, global *v8go.ObjectT
 		return err
 	}
 
+	if err := textEncoder.InjectTo(iso, global); err != nil {
+		return err
+	}
+	if err := textDecoder.InjectWith(iso, global); err != nil {
+		return err
+	}
+
 	return nil
 }
 
