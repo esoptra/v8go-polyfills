@@ -39,6 +39,14 @@ type Crypto struct {
 	KeyMap sync.Map
 }
 
+type KeyAlgorithm string
+
+const (
+	RSA1_5       = KeyAlgorithm("RSASSA-PKCS1-v1_5") // RSA-PKCS1v1.5
+	RSA_OAEP     = KeyAlgorithm("RSA-OAEP")          // RSA-OAEP-SHA1
+	RSA_OAEP_256 = KeyAlgorithm("RSA-OAEP-256")      // RSA-OAEP-SHA256
+)
+
 func NewCrypto(opt ...Option) *Crypto {
 	c := &Crypto{}
 
@@ -76,7 +84,7 @@ func (c *Crypto) cryptoVerifyFunctionCallback() v8go.FunctionCallback {
 				return
 			}
 
-			algorithm, algoName, err := getAlgorithm(args[0])
+			algorithm, _, err := getAlgorithm(args[0])
 			if err != nil {
 				resolver.Reject(newErrorValue(iso, "Error parsing Algorithm arg: %#v\n", err))
 				return
@@ -100,7 +108,7 @@ func (c *Crypto) cryptoVerifyFunctionCallback() v8go.FunctionCallback {
 				return
 			}
 
-			if algoName == "RSA-OAEP" && key.Type == "public" {
+			if key.Type == "public" {
 				//this expecting public rsa key
 				pubKey, ok := c.KeyMap.Load(key.Kid)
 				if !ok {
@@ -144,7 +152,7 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 					resolver.Reject(newErrorValue(iso, "error getting keyData %#v", err))
 					return
 				}
-				algorithm, algoName, err := getAlgorithm(args[2])
+				algorithm, _, err := getAlgorithm(args[2])
 				if err != nil {
 					resolver.Reject(newErrorValue(iso, "Error parsing Algorithm arg: %#v\n", err))
 					return
@@ -172,26 +180,22 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 				isKeySet := keyData.Has("keys")
 
 				var key interface{}
-				if algoName == "RSA-OAEP" {
-					//this expecting public rsa key
-					if isKeySet {
-						keys, err := parseKeySet(keyDataBytes)
-						if err != nil {
-							resolver.Reject(newErrorValue(iso, "Could not parse DER encoded key (encryption key): %#v", err))
-							return
-						}
-						//select the first key from the set
-						key = keys[0]
-					} else {
-						key, err = parseKey(keyDataBytes)
-						if err != nil {
-							resolver.Reject(newErrorValue(iso, "Could not parse DER encoded key (encryption key): %#v", err))
-							return
-						}
+				//this expecting public rsa key
+				if isKeySet {
+					keys, err := parseKeySet(keyDataBytes)
+					if err != nil {
+						resolver.Reject(newErrorValue(iso, "Could not parse DER encoded key (encryption key): %#v", err))
+						return
 					}
-
+					//select the first key from the set
+					key = keys[0]
+				} else {
+					key, err = parseKey(keyDataBytes)
+					if err != nil {
+						resolver.Reject(newErrorValue(iso, "Could not parse DER encoded key (encryption key): %#v", err))
+						return
+					}
 				}
-
 				//fmt.Println(key)
 				miniPub := uuid.NewUuid()
 				c.KeyMap.Store(miniPub, key)
@@ -266,7 +270,7 @@ func (c *Crypto) cryptoGenerateKeyFunctionCallback() v8go.FunctionCallback {
 				return
 			}
 
-			algorithm, algoName, err := getAlgorithm(args[0])
+			algorithm, _, err := getAlgorithm(args[0])
 			if err != nil {
 				resolver.Reject(newErrorValue(iso, "Error parsing Algorithm arg: %#v\n", err))
 				return
@@ -286,43 +290,41 @@ func (c *Crypto) cryptoGenerateKeyFunctionCallback() v8go.FunctionCallback {
 
 			var result interface{}
 
-			if algoName == "RSA-OAEP" {
-				primeBits := 2048
+			primeBits := 2048
 
-				rsaAlgo := algorithm.(*RSAAlgo)
-				if rsaAlgo.ModulusLength != 0 {
-					primeBits = rsaAlgo.ModulusLength
-				}
-				// The GenerateKey method takes in a reader that returns random bits, and
-				// the number of bits
-				privateKey, err := rsa.GenerateKey(rand.Reader, primeBits) //2048 by default
-				if err != nil {
-					resolver.Reject(newErrorValue(iso, "error generating RSA key: %#v", err))
-					return
-				}
+			rsaAlgo := algorithm.(*RSAAlgo)
+			if rsaAlgo.ModulusLength != 0 {
+				primeBits = rsaAlgo.ModulusLength
+			}
+			// The GenerateKey method takes in a reader that returns random bits, and
+			// the number of bits
+			privateKey, err := rsa.GenerateKey(rand.Reader, primeBits) //2048 by default
+			if err != nil {
+				resolver.Reject(newErrorValue(iso, "error generating RSA key: %#v", err))
+				return
+			}
 
-				//store a pointer reference with the fetcher
-				miniPriv := uuid.NewUuid()
-				c.KeyMap.Store(miniPriv, privateKey)
-				miniPub := uuid.NewUuid()
-				c.KeyMap.Store(miniPub, &privateKey.PublicKey)
+			//store a pointer reference with the fetcher
+			miniPriv := uuid.NewUuid()
+			c.KeyMap.Store(miniPriv, privateKey)
+			miniPub := uuid.NewUuid()
+			c.KeyMap.Store(miniPub, &privateKey.PublicKey)
 
-				result = &CryptoKeyPair{
-					PrivateKey: CryptoKey{
-						Type:        "private",
-						Kid:         miniPriv,
-						Extractable: extractable.Boolean(),
-						Algorithm:   algorithm,
-						Usages:      keyUsages.Object(),
-					},
-					PublicKey: CryptoKey{
-						Type:        "public",
-						Kid:         miniPub,
-						Extractable: extractable.Boolean(),
-						Algorithm:   algorithm,
-						Usages:      keyUsages.Object(),
-					},
-				}
+			result = &CryptoKeyPair{
+				PrivateKey: CryptoKey{
+					Type:        "private",
+					Kid:         miniPriv,
+					Extractable: extractable.Boolean(),
+					Algorithm:   algorithm,
+					Usages:      keyUsages.Object(),
+				},
+				PublicKey: CryptoKey{
+					Type:        "public",
+					Kid:         miniPub,
+					Extractable: extractable.Boolean(),
+					Algorithm:   algorithm,
+					Usages:      keyUsages.Object(),
+				},
 			}
 
 			resultBytes, err := json.Marshal(result)
@@ -351,32 +353,34 @@ func newErrorValue(iso *v8go.Isolate, format string, a ...interface{}) *v8go.Val
 func getAlgorithm(v *v8go.Value) (interface{}, string, error) {
 	algorithm, err := v.AsObject() //object type
 	if err != nil {
-		return nil, "", fmt.Errorf("Expected algorithm argument as Object type: %#v\n", err)
+		return nil, "", fmt.Errorf("expected algorithm argument as Object type: %#v", err)
 	}
 	if !algorithm.Has("name") {
-		return nil, "", fmt.Errorf("Missing algorithm's name property\n")
+		return nil, "", fmt.Errorf("missing algorithm's name property")
 	}
 	algoName, err := algorithm.Get("name")
 	if err != nil {
-		return nil, "", fmt.Errorf("Missing algorithm's name property:%#v\n", err)
+		return nil, "", fmt.Errorf("missing algorithm's name property:%#v", err)
 	}
 	if algoName.String() == "" {
-		return nil, "", fmt.Errorf("Missing algorithm's name property value\n")
+		return nil, "", fmt.Errorf("missing algorithm's name property value")
 	}
 	res, err := algorithm.MarshalJSON()
 	if err != nil {
-		return nil, "", fmt.Errorf("Error Marshalling algorithm:%#v\n", err)
+		return nil, "", fmt.Errorf("error Marshalling algorithm:%#v", err)
 	}
 
 	var result interface{}
-	if algoName.String() == "RSA-OAEP" {
+	switch algoName.String() {
+	case string(RSA1_5), string(RSA_OAEP), string(RSA_OAEP_256):
 		rsa := &RSAAlgo{}
-		//fmt.Println(string(res))
 		err = json.Unmarshal(res, rsa)
 		if err != nil {
-			return nil, "", fmt.Errorf("Error UnMarshalling algorithm:%#v\n", err)
+			return nil, "", fmt.Errorf("error UnMarshalling algorithm:%#v", err)
 		}
 		result = rsa
+	default:
+		return nil, "", fmt.Errorf("unsupported algorithm - %s is not yet supported", algoName.String())
 	}
 
 	return result, algoName.String(), nil
