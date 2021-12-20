@@ -116,6 +116,10 @@ func InjectToContext(ctx *v8go.Context, opt ...interface{}) error {
 	if err := crypto.InjectTo(ctx); err != nil {
 		return err
 	}
+
+	if err := fetch.InjectHTTPProperties(ctx); err != nil {
+		panic(err)
+	}
 	return nil
 }
 
