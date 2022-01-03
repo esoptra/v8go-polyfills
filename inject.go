@@ -99,7 +99,7 @@ func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ..
 	return nil
 }
 
-func InjectToContext(ctx *v8go.Context, opt ...interface{}) error {
+func InjectToContext(ctx *v8go.Context, iso *v8go.Isolate, opt ...interface{}) error {
 	var consoleOpts []console.Option
 
 	for _, o := range opt {
@@ -117,10 +117,10 @@ func InjectToContext(ctx *v8go.Context, opt ...interface{}) error {
 		}
 	}
 
-	if err := console.InjectTo(ctx, consoleOpts...); err != nil {
+	if err := crypto.InjectWith(iso, ctx); err != nil {
 		return err
 	}
-	if err := crypto.InjectTo(ctx); err != nil {
+	if err := console.InjectTo(ctx, consoleOpts...); err != nil {
 		return err
 	}
 

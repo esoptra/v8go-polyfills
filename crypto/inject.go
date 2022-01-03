@@ -139,9 +139,7 @@ func InjectTo(ctx *v8go.Context, opt ...Option) error {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
 
-	global := ctx.Global()
-
-	if err := global.Set("crypto", conObj); err != nil {
+	if err := ctx.Global().Set("crypto", conObj); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
 

@@ -23,13 +23,12 @@
 package crypto
 
 import (
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"sync"
-
-	jwt "github.com/dgrijalva/jwt-go"
 
 	"github.com/esoptra/v8go"
 	"github.com/esoptra/v8go-polyfills/uuid"
@@ -120,7 +119,32 @@ func (c *Crypto) cryptoVerifyFunctionCallback() v8go.FunctionCallback {
 				payload := args[3].Uint8Array()
 				//fmt.Println("payload", string(payload))
 
-				err = jwt.SigningMethodRS256.Verify(string(payload), string(sign), pubKey)
+				var rsaKey *rsa.PublicKey
+
+				if rsaKey, ok = pubKey.(*rsa.PublicKey); !ok {
+					resolver.Reject(newErrorValue(iso, "Invalid Key : %#v\n", pubKey))
+					return
+				}
+				var hash crypto.Hash
+
+				switch algorithm.(*RSAAlgoOut).Hash.Name {
+				case "SHA-256":
+					hash = crypto.SHA256
+				case "SHA-384":
+					hash = crypto.SHA384
+				case "SHA-512":
+					hash = crypto.SHA512
+				default:
+					resolver.Reject(newErrorValue(iso, "unknown/unsupported algorithm"))
+					return
+				}
+
+				hasher := hash.New()
+
+				// According to documentation, Write() on hash never fails
+				_, _ = hasher.Write(payload)
+				hashed := hasher.Sum(nil)
+				err = rsa.VerifyPKCS1v15(rsaKey, hash, hashed, sign)
 				passed = (err == nil)
 			}
 
@@ -146,7 +170,8 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 
 			format := args[0].String()
 			var result interface{}
-			if format == "jwk" {
+			switch format {
+			case "jwk":
 				keyData, err := args[1].AsObject() //object type
 				if err != nil {
 					resolver.Reject(newErrorValue(iso, "error getting keyData %#v", err))
@@ -207,7 +232,8 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 					Algorithm:   algorithm,
 					Usages:      keyUsages,
 				}
-			} else {
+
+			default:
 				resolver.Reject(newErrorValue(iso, "format %q not supported", format))
 				return
 			}
@@ -230,11 +256,22 @@ func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 	}
 }
 
-type RSAAlgo struct {
-	Name           string           `json:"name"`           //"RSA-OAEP",
-	ModulusLength  int              `json:"modulusLength"`  // 4096,
-	PublicExponent map[string]uint8 `json:"publicExponent"` // new Uint8Array([1, 0, 1]),
-	Hash           string           `json:"hash"`           // "SHA-256"
+type RSAAlgoIn struct {
+	Name           string           `json:"name"`                         //"RSA-OAEP",
+	ModulusLength  int              `json:"modulusLength" default:"4096"` // 4096,
+	PublicExponent map[string]uint8 `json:"publicExponent"`               // new Uint8Array([1, 0, 1]),
+	Hash           string           `json:"hash"`                         // "SHA-256"
+}
+
+type RSAAlgoOut struct {
+	Name           string                  `json:"name"`                         //"RSA-OAEP",
+	ModulusLength  int                     `json:"modulusLength" default:"4096"` // 4096,
+	PublicExponent map[string]uint8        `json:"publicExponent"`               // new Uint8Array([1, 0, 1]),
+	Hash           HashAlgorithmIdentifier `json:"hash"`                         // "SHA-256"
+}
+
+type HashAlgorithmIdentifier struct {
+	Name string `json:"name"`
 }
 
 //for symmetric algo https://developer.mozilla.org/en-US/docs/Web/API/CryptoKey
@@ -292,7 +329,7 @@ func (c *Crypto) cryptoGenerateKeyFunctionCallback() v8go.FunctionCallback {
 
 			primeBits := 2048
 
-			rsaAlgo := algorithm.(*RSAAlgo)
+			rsaAlgo := algorithm.(*RSAAlgoOut)
 			if rsaAlgo.ModulusLength != 0 {
 				primeBits = rsaAlgo.ModulusLength
 			}
@@ -373,12 +410,22 @@ func getAlgorithm(v *v8go.Value) (interface{}, string, error) {
 	var result interface{}
 	switch algoName.String() {
 	case string(RSA1_5), string(RSA_OAEP), string(RSA_OAEP_256):
-		rsa := &RSAAlgo{}
+		rsa := &RSAAlgoIn{}
 		err = json.Unmarshal(res, rsa)
 		if err != nil {
 			return nil, "", fmt.Errorf("error UnMarshalling algorithm:%#v", err)
 		}
-		result = rsa
+		rsaout := &RSAAlgoOut{
+			Name:           rsa.Name,
+			PublicExponent: rsa.PublicExponent,
+			Hash: HashAlgorithmIdentifier{
+				Name: rsa.Hash,
+			},
+		}
+		if rsa.ModulusLength == 0 {
+			rsaout.ModulusLength = 2048
+		}
+		result = rsaout
 	default:
 		return nil, "", fmt.Errorf("unsupported algorithm - %s is not yet supported", algoName.String())
 	}

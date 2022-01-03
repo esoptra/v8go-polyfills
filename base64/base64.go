@@ -54,8 +54,7 @@ func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 		}
 
 		encoded := args[0].String()
-
-		byts, err := stdBase64.StdEncoding.DecodeString(encoded)
+		byts, err := stdBase64.RawStdEncoding.DecodeString(encoded)
 		if err != nil {
 			return newStringValue(ctx, "")
 		}
@@ -77,8 +76,7 @@ func (b *base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 		}
 
 		str := args[0].String()
-
-		encoded := stdBase64.StdEncoding.EncodeToString([]byte(str))
+		encoded := stdBase64.RawStdEncoding.EncodeToString([]byte(str))
 		return newStringValue(ctx, encoded)
 	}
 }
