@@ -78,6 +78,17 @@ func TestAtob(t *testing.T) {
 		t.Errorf("assert '汉字' but got '%s'", s)
 		return
 	}
+
+	val, err = ctx.RunScript("atob('pG8hmgZAFrtaqOIGgc2eYkZo/Xxb0/0ntgky5fZsAg5QpHoh7f6EfufNaTEcGY4oFMcE9ii5TI5S9+0LJqJcHRHpOd8xcWMQ+YWe5DAEag/90uRubFXDuLnK4mHGrEWRdlkO0vp5YDmhUItykyq/GVMzwBmbRKhRWzVxEao9dsXFZrnrTkQE2rdtE81w5kAvhEnYB8q7Yfy0uRN+7U2wLyazy/TqYfx19tDBN66F32rlV8SdTxvewRj4ZMw12/RBLdaiSoj6phMpjOllFgLdUi1RY+roJjNcdaHH988aopZgqnQvTQ8zOczES0tBqt+oRJyrwOhFvpvTZAgg5+ykUg')", "atob_unicode.js")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if s := val.String(); s != "汉字" {
+		t.Errorf("assert '汉字' but got '%s'", s)
+		return
+	}
 }
 
 func TestBtoa(t *testing.T) {

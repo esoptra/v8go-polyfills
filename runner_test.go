@@ -12,6 +12,8 @@ import (
 	"github.com/esoptra/v8go-polyfills/console"
 	"github.com/esoptra/v8go-polyfills/fetch"
 	"github.com/esoptra/v8go-polyfills/uuid"
+
+	"github.com/esoptra/v8go-polyfills/crypto"
 )
 
 func TestRunPromise(t *testing.T) {
@@ -112,6 +114,10 @@ func runTestRunner(t *testing.T, script string) {
 		t.Error(err)
 		return
 	}
+	if err := crypto.InjectTo(ctx); err != nil {
+		panic(err)
+	}
+
 	if err := console.InjectTo(ctx); err != nil {
 		panic(err)
 	}
