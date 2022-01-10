@@ -61,7 +61,7 @@ func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 		if err != nil {
 			return newStringValue(ctx, "")
 		}
-		return newStringValue(ctx, string(byts))
+		return newStringFromByteArray(ctx, byts)
 	}
 }
 
@@ -86,5 +86,11 @@ func (b *base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 func newStringValue(ctx *v8go.Context, str string) *v8go.Value {
 	iso := ctx.Isolate()
 	val, _ := v8go.NewValue(iso, str)
+	return val
+}
+
+func newStringFromByteArray(ctx *v8go.Context, byts []byte) *v8go.Value {
+	iso := ctx.Isolate()
+	val, _ := v8go.NewStringFromByteArray(iso, byts)
 	return val
 }
