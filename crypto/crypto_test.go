@@ -23,7 +23,7 @@
 package crypto
 
 import (
-	"fmt"
+	"encoding/json"
 	"testing"
 
 	"github.com/esoptra/v8go"
@@ -150,7 +150,6 @@ func TestImportKey(t *testing.T) {
 				const key = {"kty":"RSA","use":"sig","kid":"l3sQ-50cCH4xBVZLHTGwnSR7680","x5t":"l3sQ-50cCH4xBVZLHTGwnSR7680","n":"sfsXMXWuO-dniLaIELa3Pyqz9Y_rWff_AVrCAnFSdPHa8__Pmkbt_yq-6Z3u1o4gjRpKWnrjxIh8zDn1Z1RS26nkKcNg5xfWxR2K8CPbSbY8gMrp_4pZn7tgrEmoLMkwfgYaVC-4MiFEo1P2gd9mCdgIICaNeYkG1bIPTnaqquTM5KfT971MpuOVOdM1ysiejdcNDvEb7v284PYZkw2imwqiBY3FR0sVG7jgKUotFvhd7TR5WsA20GS_6ZIkUUlLUbG_rXWGl0YjZLS_Uf4q8Hbo7u-7MaFn8B69F6YaFdDlXm_A0SpedVFWQFGzMsp43_6vEzjfrFDJVAYkwb6xUQ","e":"AQAB","x5c":["MIIDBTCCAe2gAwIBAgIQWPB1ofOpA7FFlOBk5iPaNTANBgkqhkiG9w0BAQsFADAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb250cm9sLndpbmRvd3MubmV0MB4XDTIxMDIwNzE3MDAzOVoXDTI2MDIwNjE3MDAzOVowLTErMCkGA1UEAxMiYWNjb3VudHMuYWNjZXNzY29udHJvbC53aW5kb3dzLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALH7FzF1rjvnZ4i2iBC2tz8qs/WP61n3/wFawgJxUnTx2vP/z5pG7f8qvumd7taOII0aSlp648SIfMw59WdUUtup5CnDYOcX1sUdivAj20m2PIDK6f+KWZ+7YKxJqCzJMH4GGlQvuDIhRKNT9oHfZgnYCCAmjXmJBtWyD052qqrkzOSn0/e9TKbjlTnTNcrIno3XDQ7xG+79vOD2GZMNopsKogWNxUdLFRu44ClKLRb4Xe00eVrANtBkv+mSJFFJS1Gxv611hpdGI2S0v1H+KvB26O7vuzGhZ/AevRemGhXQ5V5vwNEqXnVRVkBRszLKeN/+rxM436xQyVQGJMG+sVECAwEAAaMhMB8wHQYDVR0OBBYEFLlRBSxxgmNPObCFrl+hSsbcvRkcMA0GCSqGSIb3DQEBCwUAA4IBAQB+UQFTNs6BUY3AIGkS2ZRuZgJsNEr/ZEM4aCs2domd2Oqj7+5iWsnPh5CugFnI4nd+ZLgKVHSD6acQ27we+eNY6gxfpQCY1fiN/uKOOsA0If8IbPdBEhtPerRgPJFXLHaYVqD8UYDo5KNCcoB4Kh8nvCWRGPUUHPRqp7AnAcVrcbiXA/bmMCnFWuNNahcaAKiJTxYlKDaDIiPN35yECYbDj0PBWJUxobrvj5I275jbikkp8QSLYnSU/v7dMDUbxSLfZ7zsTuaF2Qx+L62PsYTwLzIFX3M8EMSQ6h68TupFTi5n0M2yIXQgoRoNEDWNJZ/aZMY/gqT02GQGBWrh+/vJ"],"issuer":"https://login.microsoftonline.com/24b080cd-5874-44ab-9862-8d7e0e0781ab/v2.0","alg":"RS256"}
 				const algo = {"name":"RSASSA-PKCS1-v1_5","hash":"SHA-256"}
 	let importedKey = await crypto.subtle.importKey('jwk', key, algo, false, ["verify"]);
-	console.log(importedKey.kid);
 	return importedKey
 	};
 	let res = epsilon();
@@ -168,13 +167,25 @@ func TestImportKey(t *testing.T) {
 	for proms.State() == v8go.Pending {
 		continue
 	}
+	if !proms.Result().IsObject() {
+		t.Error("expected object type but got error")
+	}
 
 	res := proms.Result().Object()
 	lala, err := res.MarshalJSON()
-	fmt.Println("returned val is", string(lala))
+	if err != nil {
+		t.Errorf("error in marshalling json %#v", err)
+	}
 
+	var jsonMap map[string]interface{}
+	json.Unmarshal(lala, &jsonMap)
+	if jsonMap == nil {
+		t.Errorf("expected json but got nil")
+	}
+	if jsonMap["algorithm"] == nil {
+		t.Errorf("expected algorith but got nil")
+	}
 }
-
 func TestVerify(t *testing.T) {
 	iso := v8go.NewIsolate()
 	defer iso.Dispose()
@@ -206,45 +217,57 @@ func TestVerify(t *testing.T) {
 	}
 
 	val, err := ctx.RunScript(`
+	epsilon = async (event) => {
+		try{
 
-			epsilon = async (event) => {
-				const key = {"kty":"RSA","use":"sig","kid":"l3sQ-50cCH4xBVZLHTGwnSR7680","x5t":"l3sQ-50cCH4xBVZLHTGwnSR7680","n":"sfsXMXWuO-dniLaIELa3Pyqz9Y_rWff_AVrCAnFSdPHa8__Pmkbt_yq-6Z3u1o4gjRpKWnrjxIh8zDn1Z1RS26nkKcNg5xfWxR2K8CPbSbY8gMrp_4pZn7tgrEmoLMkwfgYaVC-4MiFEo1P2gd9mCdgIICaNeYkG1bIPTnaqquTM5KfT971MpuOVOdM1ysiejdcNDvEb7v284PYZkw2imwqiBY3FR0sVG7jgKUotFvhd7TR5WsA20GS_6ZIkUUlLUbG_rXWGl0YjZLS_Uf4q8Hbo7u-7MaFn8B69F6YaFdDlXm_A0SpedVFWQFGzMsp43_6vEzjfrFDJVAYkwb6xUQ","e":"AQAB","x5c":["MIIDBTCCAe2gAwIBAgIQWPB1ofOpA7FFlOBk5iPaNTANBgkqhkiG9w0BAQsFADAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb250cm9sLndpbmRvd3MubmV0MB4XDTIxMDIwNzE3MDAzOVoXDTI2MDIwNjE3MDAzOVowLTErMCkGA1UEAxMiYWNjb3VudHMuYWNjZXNzY29udHJvbC53aW5kb3dzLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALH7FzF1rjvnZ4i2iBC2tz8qs/WP61n3/wFawgJxUnTx2vP/z5pG7f8qvumd7taOII0aSlp648SIfMw59WdUUtup5CnDYOcX1sUdivAj20m2PIDK6f+KWZ+7YKxJqCzJMH4GGlQvuDIhRKNT9oHfZgnYCCAmjXmJBtWyD052qqrkzOSn0/e9TKbjlTnTNcrIno3XDQ7xG+79vOD2GZMNopsKogWNxUdLFRu44ClKLRb4Xe00eVrANtBkv+mSJFFJS1Gxv611hpdGI2S0v1H+KvB26O7vuzGhZ/AevRemGhXQ5V5vwNEqXnVRVkBRszLKeN/+rxM436xQyVQGJMG+sVECAwEAAaMhMB8wHQYDVR0OBBYEFLlRBSxxgmNPObCFrl+hSsbcvRkcMA0GCSqGSIb3DQEBCwUAA4IBAQB+UQFTNs6BUY3AIGkS2ZRuZgJsNEr/ZEM4aCs2domd2Oqj7+5iWsnPh5CugFnI4nd+ZLgKVHSD6acQ27we+eNY6gxfpQCY1fiN/uKOOsA0If8IbPdBEhtPerRgPJFXLHaYVqD8UYDo5KNCcoB4Kh8nvCWRGPUUHPRqp7AnAcVrcbiXA/bmMCnFWuNNahcaAKiJTxYlKDaDIiPN35yECYbDj0PBWJUxobrvj5I275jbikkp8QSLYnSU/v7dMDUbxSLfZ7zsTuaF2Qx+L62PsYTwLzIFX3M8EMSQ6h68TupFTi5n0M2yIXQgoRoNEDWNJZ/aZMY/gqT02GQGBWrh+/vJ"],"issuer":"https://login.microsoftonline.com/24b080cd-5874-44ab-9862-8d7e0e0781ab/v2.0","alg":"RS256"}
-				const algo = {"name":"RSASSA-PKCS1-v1_5","hash":"SHA-256"}
-	let importedKey = await crypto.subtle.importKey('jwk', key, algo, false, ["verify"]);
+			const key = { "kty": "RSA", "use": "sig", "kid": "l3sQ-50cCH4xBVZLHTGwnSR7680", "x5t": "l3sQ-50cCH4xBVZLHTGwnSR7680", "n": "sfsXMXWuO-dniLaIELa3Pyqz9Y_rWff_AVrCAnFSdPHa8__Pmkbt_yq-6Z3u1o4gjRpKWnrjxIh8zDn1Z1RS26nkKcNg5xfWxR2K8CPbSbY8gMrp_4pZn7tgrEmoLMkwfgYaVC-4MiFEo1P2gd9mCdgIICaNeYkG1bIPTnaqquTM5KfT971MpuOVOdM1ysiejdcNDvEb7v284PYZkw2imwqiBY3FR0sVG7jgKUotFvhd7TR5WsA20GS_6ZIkUUlLUbG_rXWGl0YjZLS_Uf4q8Hbo7u-7MaFn8B69F6YaFdDlXm_A0SpedVFWQFGzMsp43_6vEzjfrFDJVAYkwb6xUQ", "e": "AQAB", "x5c": ["MIIDBTCCAe2gAwIBAgIQWPB1ofOpA7FFlOBk5iPaNTANBgkqhkiG9w0BAQsFADAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb250cm9sLndpbmRvd3MubmV0MB4XDTIxMDIwNzE3MDAzOVoXDTI2MDIwNjE3MDAzOVowLTErMCkGA1UEAxMiYWNjb3VudHMuYWNjZXNzY29udHJvbC53aW5kb3dzLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALH7FzF1rjvnZ4i2iBC2tz8qs/WP61n3/wFawgJxUnTx2vP/z5pG7f8qvumd7taOII0aSlp648SIfMw59WdUUtup5CnDYOcX1sUdivAj20m2PIDK6f+KWZ+7YKxJqCzJMH4GGlQvuDIhRKNT9oHfZgnYCCAmjXmJBtWyD052qqrkzOSn0/e9TKbjlTnTNcrIno3XDQ7xG+79vOD2GZMNopsKogWNxUdLFRu44ClKLRb4Xe00eVrANtBkv+mSJFFJS1Gxv611hpdGI2S0v1H+KvB26O7vuzGhZ/AevRemGhXQ5V5vwNEqXnVRVkBRszLKeN/+rxM436xQyVQGJMG+sVECAwEAAaMhMB8wHQYDVR0OBBYEFLlRBSxxgmNPObCFrl+hSsbcvRkcMA0GCSqGSIb3DQEBCwUAA4IBAQB+UQFTNs6BUY3AIGkS2ZRuZgJsNEr/ZEM4aCs2domd2Oqj7+5iWsnPh5CugFnI4nd+ZLgKVHSD6acQ27we+eNY6gxfpQCY1fiN/uKOOsA0If8IbPdBEhtPerRgPJFXLHaYVqD8UYDo5KNCcoB4Kh8nvCWRGPUUHPRqp7AnAcVrcbiXA/bmMCnFWuNNahcaAKiJTxYlKDaDIiPN35yECYbDj0PBWJUxobrvj5I275jbikkp8QSLYnSU/v7dMDUbxSLfZ7zsTuaF2Qx+L62PsYTwLzIFX3M8EMSQ6h68TupFTi5n0M2yIXQgoRoNEDWNJZ/aZMY/gqT02GQGBWrh+/vJ"], "issuer": "https://login.microsoftonline.com/24b080cd-5874-44ab-9862-8d7e0e0781ab/v2.0", "alg": "RS256" }
 
+			const algo = { "name": "RSASSA-PKCS1-v1_5", "hash": "SHA-256" }
+			let importedKey = await crypto.subtle.importKey('jwk', key, algo, false, ["verify"]);
+			let actualtoken =
+				"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiJlNjI0YTdjMi0zZTUzLTQ2NTktOGY5Yi1kN2MxOWZjZjAxZjciLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vMjRiMDgwY2QtNTg3NC00NGFiLTk4NjItOGQ3ZTBlMDc4MWFiL3YyLjAiLCJpYXQiOjE2MzkxMzU3NDYsIm5iZiI6MTYzOTEzNTc0NiwiZXhwIjoxNjM5MTM5NjQ2LCJuYW1lIjoiQXNoaXNoIFNoYXJtYSAoRGV2T24pIiwib2lkIjoiOTZmODM2N2QtY2M2NC00NjMwLWI0MGQtYTUwNTVjMjAwOGVkIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYXNoaXNoLnNoYXJtYUBkZXZvbi5ubCIsInJoIjoiMC5BUUlBellDd0pIUllxMFNZWW8xLURnZUJxOEtuSk9aVFBsbEdqNXZYd1pfUEFmY0NBTzguIiwic3ViIjoiLVNDRE5lR2IwVVc1TzZ5NkoxMERyNWhFZWxIR0lSdU5uNnd3NTZuMHRyMCIsInRpZCI6IjI0YjA4MGNkLTU4NzQtNDRhYi05ODYyLThkN2UwZTA3ODFhYiIsInV0aSI6InJfZERnTWdncGtPN01pQnhPNndTQUEiLCJ2ZXIiOiIyLjAifQ.pG8hmgZAFrtaqOIGgc2eYkZo_Xxb0_0ntgky5fZsAg5QpHoh7f6EfufNaTEcGY4oFMcE9ii5TI5S9-0LJqJcHRHpOd8xcWMQ-YWe5DAEag_90uRubFXDuLnK4mHGrEWRdlkO0vp5YDmhUItykyq_GVMzwBmbRKhRWzVxEao9dsXFZrnrTkQE2rdtE81w5kAvhEnYB8q7Yfy0uRN-7U2wLyazy_TqYfx19tDBN66F32rlV8SdTxvewRj4ZMw12_RBLdaiSoj6phMpjOllFgLdUi1RY-roJjNcdaHH988aopZgqnQvTQ8zOczES0tBqt-oRJyrwOhFvpvTZAgg5-ykUg";
+			
+		
+			const splitToken = actualtoken.split(".");
+			const sign = new Uint8Array(
+				atob(splitToken[2].replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, ""))
+					.split("")
+					.map((c) => c.charCodeAt(0))
+			);
+			const encoder = new TextEncoder();
+			concat = (...buffers)=> {
+				const size = buffers.reduce((acc, { length }) => acc + length, 0);
+				const buf = new Uint8Array(size);
+				let i = 0;
+				buffers.forEach((buffer) => {
+				  buf.set(buffer, i);
+				  i += buffer.length;
+				});
+				return buf;
+			  }
+			const jws = {
+				payload: splitToken[1],
+				signature: splitToken[2],
+				protected: splitToken[0],
+			}
 
-				const algo1 ={"hash":"SHA-256","name":"RSASSA-PKCS1-v1_5"}
-				const encoded = "pG8hmgZAFrtaqOIGgc2eYkZo/Xxb0/0ntgky5fZsAg5QpHoh7f6EfufNaTEcGY4oFMcE9ii5TI5S9+0LJqJcHRHpOd8xcWMQ+YWe5DAEag/90uRubFXDuLnK4mHGrEWRdlkO0vp5YDmhUItykyq/GVMzwBmbRKhRWzVxEao9dsXFZrnrTkQE2rdtE81w5kAvhEnYB8q7Yfy0uRN+7U2wLyazy/TqYfx19tDBN66F32rlV8SdTxvewRj4ZMw12/RBLdaiSoj6phMpjOllFgLdUi1RY+roJjNcdaHH988aopZgqnQvTQ8zOczES0tBqt+oRJyrwOhFvpvTZAgg5+ykUg"
-				const sign = new Uint8Array(
-					atob(encoded)
-					  .split("")
-					  .map((c) => c.charCodeAt(0))
-				  );
-				  const encoder = new TextEncoder();
-				
-				  let actualtoken =
-				  "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Imwzc1EtNTBjQ0g0eEJWWkxIVEd3blNSNzY4MCJ9.eyJhdWQiOiJlNjI0YTdjMi0zZTUzLTQ2NTktOGY5Yi1kN2MxOWZjZjAxZjciLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vMjRiMDgwY2QtNTg3NC00NGFiLTk4NjItOGQ3ZTBlMDc4MWFiL3YyLjAiLCJpYXQiOjE2MzkxMzU3NDYsIm5iZiI6MTYzOTEzNTc0NiwiZXhwIjoxNjM5MTM5NjQ2LCJuYW1lIjoiQXNoaXNoIFNoYXJtYSAoRGV2T24pIiwib2lkIjoiOTZmODM2N2QtY2M2NC00NjMwLWI0MGQtYTUwNTVjMjAwOGVkIiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYXNoaXNoLnNoYXJtYUBkZXZvbi5ubCIsInJoIjoiMC5BUUlBellDd0pIUllxMFNZWW8xLURnZUJxOEtuSk9aVFBsbEdqNXZYd1pfUEFmY0NBTzguIiwic3ViIjoiLVNDRE5lR2IwVVc1TzZ5NkoxMERyNWhFZWxIR0lSdU5uNnd3NTZuMHRyMCIsInRpZCI6IjI0YjA4MGNkLTU4NzQtNDRhYi05ODYyLThkN2UwZTA3ODFhYiIsInV0aSI6InJfZERnTWdncGtPN01pQnhPNndTQUEiLCJ2ZXIiOiIyLjAifQ.pG8hmgZAFrtaqOIGgc2eYkZo_Xxb0_0ntgky5fZsAg5QpHoh7f6EfufNaTEcGY4oFMcE9ii5TI5S9-0LJqJcHRHpOd8xcWMQ-YWe5DAEag_90uRubFXDuLnK4mHGrEWRdlkO0vp5YDmhUItykyq_GVMzwBmbRKhRWzVxEao9dsXFZrnrTkQE2rdtE81w5kAvhEnYB8q7Yfy0uRN-7U2wLyazy_TqYfx19tDBN66F32rlV8SdTxvewRj4ZMw12_RBLdaiSoj6phMpjOllFgLdUi1RY-roJjNcdaHH988aopZgqnQvTQ8zOczES0tBqt-oRJyrwOhFvpvTZAgg5-ykUg";
-	  
-				const splitToken = actualtoken.split(".");
-				const jws =  {
-					payload: splitToken[1],
-					signature: splitToken[2],
-					protected: splitToken[0],
-				  }
-				const data = concat(
-					encoder.encode((_a = jws.protected) !== null && _a !== void 0 ? _a : ""),
-					encoder.encode("."),
-					typeof jws.payload === "string"
-					  ? encoder.encode(jws.payload)
-					  : jws.payload
-				  );
+			const data = concat(
+				encoder.encode((_a = jws.protected) !== null && _a !== void 0 ? _a : ""),
+				encoder.encode("."),
+				typeof jws.payload === "string"
+					? encoder.encode(jws.payload)
+					: jws.payload
+			);
 
-	let verfied = await crypto.subtle.verify(algo1, importedKey, sign, data);
-	console.log(verfied);
-	return verfied
+			let verfied = await crypto.subtle.verify(algo, importedKey, sign, data);
+			return verfied
+		}catch (err){
+			return JSON.stringify(err)
+		}
 	};
 	let res = epsilon();
-	Promise.resolve(res)`, "crypto.js")
+	Promise.resolve(res)
+	`, "crypto.js")
 	if err != nil {
 		t.Error(err)
 	}
@@ -258,9 +281,13 @@ func TestVerify(t *testing.T) {
 	for proms.State() == v8go.Pending {
 		continue
 	}
+	if !proms.Result().IsBoolean() {
+		t.Error("expected boolean in result, but got error")
+	}
 
-	res := proms.Result().Object()
-	lala, err := res.MarshalJSON()
-	fmt.Println("returned val is", string(lala))
+	res := proms.Result().Boolean()
+	if !res {
+		t.Errorf("expected true, but got %t", res)
+	}
 
 }
