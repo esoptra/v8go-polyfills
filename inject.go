@@ -36,17 +36,9 @@ import (
 	"github.com/esoptra/v8go"
 )
 
-func InjectToGlobalObjectWithCustomFetch(iso *v8go.Isolate, global *v8go.ObjectTemplate, fetcher *fetch.Fetch, opt ...interface{}) error {
-	var fetchOpts []fetch.Option
+func InjectToGlobalObjectWithCustomFetch(iso *v8go.Isolate, global *v8go.ObjectTemplate, fetcher *fetch.Fetch) error {
 
-	for _, o := range opt {
-		switch t := o.(type) {
-		case fetch.Option:
-			fetchOpts = append(fetchOpts, t)
-		}
-	}
-
-	if err := fetch.InjectTo(iso, global, fetchOpts...); err != nil {
+	if err := fetch.InjectWithFetcherTo(iso, global, fetcher); err != nil {
 		return err
 	}
 
