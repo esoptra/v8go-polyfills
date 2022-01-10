@@ -35,14 +35,8 @@ func NewRunner(iso *v8go.Isolate, global *v8go.ObjectTemplate) (*Runner, error) 
 			return nil
 		}
 	}
-	errFn, err := v8go.NewFunctionTemplate(iso, errFun())
-	if err != nil {
-		return nil, fmt.Errorf("v8go-runner/errFn: %w", err)
-	}
-	resFn, err := v8go.NewFunctionTemplate(iso, resFun())
-	if err != nil {
-		return nil, fmt.Errorf("v8go-runner/resFn: %w", err)
-	}
+	errFn := v8go.NewFunctionTemplate(iso, errFun())
+	resFn := v8go.NewFunctionTemplate(iso, resFun())
 	if err := global.Set("errToGo", errFn, v8go.ReadOnly); err != nil {
 		return nil, fmt.Errorf("v8go-runner/errToGo: %w", err)
 	}

@@ -91,8 +91,9 @@ func getDecoder(label string) (*encoding.Decoder, error) {
 func (c *Decoder) TextDecoderFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
-		iso, _ := ctx.Isolate()
+		iso := ctx.Isolate()
 		label := ""
+		_ = label
 		if len(info.Args()) > 0 {
 			label = info.Args()[0].String()
 			if len(info.Args()) > 1 {
@@ -100,23 +101,27 @@ func (c *Decoder) TextDecoderFunctionCallback() v8go.FunctionCallback {
 			}
 		}
 
-		decodeFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		decodeFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 			args := info.Args()
 			if len(args) <= 0 {
-				return iso.ThrowException(fmt.Sprintf("Expected an arguments\n"))
+				strErr, _ := v8go.NewValue(iso, "Expected an arguments\n")
+
+				return iso.ThrowException(strErr)
 			}
 			s := args[0].Uint8Array()
 			result := ""
 
 			dec, err := getDecoder(label)
 			if err != nil {
-				return iso.ThrowException(err.Error())
+				strErr, _ := v8go.NewValue(iso, err.Error())
+				return iso.ThrowException(strErr)
 			}
 			if dec != nil {
 				bUTF := make([]byte, len(s)*3)
 				n, _, err := dec.Transform(bUTF, s, true)
 				if err != nil {
-					return iso.ThrowException(fmt.Sprintf("Error transforming: %#v", err))
+					strErr, _ := v8go.NewValue(iso, fmt.Sprintf("Error transforming: %#v", err))
+					return iso.ThrowException(strErr)
 				}
 				result = string(bUTF[:n])
 			} else {
@@ -126,26 +131,24 @@ func (c *Decoder) TextDecoderFunctionCallback() v8go.FunctionCallback {
 			//fmt.Println(result)
 			v, err := v8go.NewValue(iso, result)
 			if err != nil {
-				return iso.ThrowException(fmt.Sprintf("error creating new val: %#v", err))
+				strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error creating new val: %#v", err))
+
+				return iso.ThrowException(strErr)
 			}
 			return v
 		})
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating encode() template: %#v", err))
-		}
 
-		resTmp, err := v8go.NewObjectTemplate(iso)
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating object template: %#v", err))
-		}
+		resTmp := v8go.NewObjectTemplate(iso)
 
 		if err := resTmp.Set("decode", decodeFnTmp, v8go.ReadOnly); err != nil {
-			return iso.ThrowException(fmt.Sprintf("error setting encode function template: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error setting encode function template: %#v", err))
+			return iso.ThrowException(strErr)
 		}
 
 		resObj, err := resTmp.NewInstance(ctx)
 		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error new instance from ctx: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error new instance from ctx: %#v", err))
+			return iso.ThrowException(strErr)
 		}
 		return resObj.Value
 	}

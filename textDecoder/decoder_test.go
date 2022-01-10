@@ -33,19 +33,14 @@ import (
 func TestInject(t *testing.T) {
 	t.Parallel()
 
-	iso, _ := v8go.NewIsolate()
-	ctx, _ := v8go.NewContext(iso)
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := InjectWith(iso, global); err != nil {
 		t.Error(err)
 	}
 
-	ctx, err := v8go.NewContext(iso, global)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	ctx := v8go.NewContext(iso, global)
 	if err := console.InjectTo(ctx); err != nil {
 		t.Error(err)
 	}

@@ -49,10 +49,7 @@ func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) err
 	if err := global.Set("fetch", fetchFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 	}
-	RequestFn, err := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
-	}
+	RequestFn := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
 
 	if err := global.Set("Request", RequestFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
@@ -61,19 +58,12 @@ func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) err
 }
 
 func InjectWithFetcherTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, f Fetcher) error {
-	fetchFn, err := v8go.NewFunctionTemplate(iso, f.GetFetchFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
-	}
-
+	fetchFn := v8go.NewFunctionTemplate(iso, f.GetFetchFunctionCallback())
 	if err := global.Set("fetch", fetchFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 	}
 
-	RequestFn, err := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
-	}
+	RequestFn := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
 
 	if err := global.Set("Request", RequestFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
@@ -85,29 +75,16 @@ func InjectWithFetcherTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, f Fetch
 func InjectWithCtx(ctx *v8go.Context, opt ...Option) error {
 	f := NewFetcher(opt...)
 
-	iso, err := ctx.Isolate()
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
-	}
+	iso := ctx.Isolate()
 
-	fetchFn, err := v8go.NewFunctionTemplate(iso, f.GetFetchFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
-	}
+	fetchFn := v8go.NewFunctionTemplate(iso, f.GetFetchFunctionCallback())
 
-	con, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/console: %w", err)
-	}
+	con := v8go.NewObjectTemplate(iso)
 
 	if err := con.Set("fetch", fetchFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 	}
-	RequestFn, err := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
-	}
-
+	RequestFn := v8go.NewFunctionTemplate(iso, RequestCallbackFunc)
 	if err := con.Set("Request", RequestFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/fetch RequestFn: %w", err)
 	}

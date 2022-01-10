@@ -161,9 +161,9 @@ func newV8ContextWithFetch(opt ...Option) (*v8go.Context, error) {
 
 func testFetchBodyWithLazyLoad(t *testing.T, script string) {
 
-	iso, _ := v8go.NewIsolate()
+	iso := v8go.NewIsolate()
 	defer iso.Dispose()
-	global, _ := v8go.NewObjectTemplate(iso)
+	global := v8go.NewObjectTemplate(iso)
 
 	fetcher := NewFetcher()
 	if err := InjectWithFetcherTo(iso, global, fetcher); err != nil {
@@ -171,11 +171,7 @@ func testFetchBodyWithLazyLoad(t *testing.T, script string) {
 		return
 	}
 
-	ctx, err := v8go.NewContext(iso, global)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	ctx := v8go.NewContext(iso, global)
 	if err := console.InjectTo(ctx); err != nil {
 		panic(err)
 	}

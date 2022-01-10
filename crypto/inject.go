@@ -46,42 +46,26 @@ func InjectWith(iso *v8go.Isolate, ctx *v8go.Context, opt ...Option) error {
 
 	c := NewCrypto(opt...)
 
-	con, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
+	con := v8go.NewObjectTemplate(iso)
 
-	verifyFn, err := v8go.NewFunctionTemplate(iso, c.cryptoVerifyFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
+	verifyFn := v8go.NewFunctionTemplate(iso, c.cryptoVerifyFunctionCallback())
 
 	if err := con.Set("verify", verifyFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
 
-	generateKeyFn, err := v8go.NewFunctionTemplate(iso, c.cryptoGenerateKeyFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
+	generateKeyFn := v8go.NewFunctionTemplate(iso, c.cryptoGenerateKeyFunctionCallback())
 
 	if err := con.Set("generateKey", generateKeyFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
 
-	importKeyFn, err := v8go.NewFunctionTemplate(iso, c.cryptoImportKeyFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
-
+	importKeyFn := v8go.NewFunctionTemplate(iso, c.cryptoImportKeyFunctionCallback())
 	if err := con.Set("importKey", importKeyFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
 
-	con1, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
+	con1 := v8go.NewObjectTemplate(iso)
 
 	if err := con1.Set("subtle", con); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
@@ -104,31 +88,18 @@ func InjectTo(ctx *v8go.Context, opt ...Option) error {
 		return errors.New("v8go-polyfills/crypto: ctx is required")
 	}
 
-	iso, err := ctx.Isolate()
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
+	iso := ctx.Isolate()
 
 	c := NewCrypto(opt...)
 
-	con, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
-
-	verifyFn, err := v8go.NewFunctionTemplate(iso, c.cryptoVerifyFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
+	con := v8go.NewObjectTemplate(iso)
+	verifyFn := v8go.NewFunctionTemplate(iso, c.cryptoVerifyFunctionCallback())
 
 	if err := con.Set("verify", verifyFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
 	}
 
-	importKeyFn, err := v8go.NewFunctionTemplate(iso, c.cryptoImportKeyFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/crypto: %w", err)
-	}
+	importKeyFn := v8go.NewFunctionTemplate(iso, c.cryptoImportKeyFunctionCallback())
 
 	if err := con.Set("importKey", importKeyFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/crypto: %w", err)

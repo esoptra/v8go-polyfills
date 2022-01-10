@@ -54,11 +54,13 @@ func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 		}
 
 		encoded := args[0].String()
+		if encoded == "" {
+			return newStringValue(ctx, "")
+		}
 		byts, err := stdBase64.RawStdEncoding.DecodeString(encoded)
 		if err != nil {
 			return newStringValue(ctx, "")
 		}
-
 		return newStringValue(ctx, string(byts))
 	}
 }

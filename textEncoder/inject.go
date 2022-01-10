@@ -31,20 +31,14 @@ import (
 //uses encode func to create encodeinto wrapper method
 func InjectWith(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) (*v8go.Context, error) {
 	e := NewEncode(opt...)
-	encodeFnTmp, err := v8go.NewFunctionTemplate(iso, e.TextEncoderFunctionCallback())
-	if err != nil {
-		return nil, fmt.Errorf("v8go-polyfills/textEncoder NewFunctionTemplate: %w", err)
-	}
+	encodeFnTmp := v8go.NewFunctionTemplate(iso, e.TextEncoderFunctionCallback())
 	if err := global.Set("TextEncoder1", encodeFnTmp); err != nil {
 		return nil, fmt.Errorf("v8go-polyfills/textEncoder global.set: %w", err)
 	}
 
-	ctx, err := v8go.NewContext(iso, global)
-	if err != nil {
-		return nil, fmt.Errorf("v8go-polyfills/textEncoder newcontext: %w", err)
-	}
+	ctx := v8go.NewContext(iso, global)
 
-	_, err = ctx.RunScript(`class TextEncoder {
+	_, err := ctx.RunScript(`class TextEncoder {
              encode(usvstring){
                      const encoder = new TextEncoder1();
                      return encoder.encode(usvstring);
@@ -67,10 +61,7 @@ func InjectWith(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) (
 
 func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) error {
 	e := NewEncode(opt...)
-	encodeFnTmp, err := v8go.NewFunctionTemplate(iso, e.TextEncoderFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/textEncoder NewFunctionTemplate: %w", err)
-	}
+	encodeFnTmp := v8go.NewFunctionTemplate(iso, e.TextEncoderFunctionCallback())
 	if err := global.Set("TextEncoder", encodeFnTmp); err != nil {
 		return fmt.Errorf("v8go-polyfills/textEncoder global.set: %w", err)
 	}
