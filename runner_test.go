@@ -93,9 +93,9 @@ func runTestRunner(t *testing.T, script string) {
 	ctxCn, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*15))
 	defer cancel()
 
-	iso, _ := v8go.NewIsolate()
+	iso := v8go.NewIsolate()
 	defer iso.Dispose()
-	global, _ := v8go.NewObjectTemplate(iso)
+	global := v8go.NewObjectTemplate(iso)
 
 	fetcher := fetch.NewFetcher()
 	if err := fetch.InjectWithFetcherTo(iso, global, fetcher); err != nil {
@@ -109,11 +109,7 @@ func runTestRunner(t *testing.T, script string) {
 		return
 	}
 
-	ctx, err := v8go.NewContext(iso, global)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	ctx := v8go.NewContext(iso, global)
 	if err := crypto.InjectTo(ctx); err != nil {
 		panic(err)
 	}

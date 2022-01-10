@@ -571,18 +571,21 @@ func getRequestInit(ctx *v8go.Context, options *v8go.Value) (*internal.RequestIn
 func RequestCallbackFunc(info *v8go.FunctionCallbackInfo) *v8go.Value {
 	args := info.Args()
 	ctx := info.Context()
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 	if len(args) <= 0 {
-		return iso.ThrowException("1 argument required, but only 0 present")
+		strErr, _ := v8go.NewValue(iso, "1 argument required, but only 0 present")
+		return iso.ThrowException(strErr)
 	}
 
 	uri := args[0].String()
 	u, err := url.Parse(uri)
 	if err != nil {
-		return iso.ThrowException(fmt.Sprintf("Invalid URL %q: %#v", uri, err))
+		strErr, _ := v8go.NewValue(iso, fmt.Sprintf("Invalid URL %q: %#v", uri, err))
+		return iso.ThrowException(strErr)
 	}
 	if u.Scheme == "" || u.Host == "" {
-		return iso.ThrowException(fmt.Sprintf("Invalid URL %q", uri))
+		strErr, _ := v8go.NewValue(iso, fmt.Sprintf("Invalid URL %q", uri))
+		return iso.ThrowException(strErr)
 	}
 	res := &internal.JSRequestInit{
 		Url: uri,
@@ -590,7 +593,8 @@ func RequestCallbackFunc(info *v8go.FunctionCallbackInfo) *v8go.Value {
 	if len(args) > 1 {
 		reqInit, err := getRequestInit(ctx, args[1])
 		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("Error getRequestInit: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("Error getRequestInit: %#v", err))
+			return iso.ThrowException(strErr)
 		}
 		if reqInit != nil {
 			res.Method = reqInit.Method
@@ -602,11 +606,13 @@ func RequestCallbackFunc(info *v8go.FunctionCallbackInfo) *v8go.Value {
 
 	data, err := json.Marshal(res)
 	if err != nil {
-		return iso.ThrowException(fmt.Sprintf("Error Marshalling: %#v", err))
+		strErr, _ := v8go.NewValue(iso, fmt.Sprintf("Error Marshalling: %#v", err))
+		return iso.ThrowException(strErr)
 	}
 	v, err := v8go.JSONParse(info.Context(), string(data))
 	if err != nil {
-		return iso.ThrowException(fmt.Sprintf("error jsonParse on result: %#v", err))
+		strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error jsonParse on result: %#v", err))
+		return iso.ThrowException(strErr)
 	}
 
 	return v

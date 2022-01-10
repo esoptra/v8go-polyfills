@@ -30,10 +30,7 @@ import (
 
 func InjectWith(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) error {
 	e := NewDecode(opt...)
-	decodeFnTmp, err := v8go.NewFunctionTemplate(iso, e.TextDecoderFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/textDecoder NewFunctionTemplate: %w", err)
-	}
+	decodeFnTmp := v8go.NewFunctionTemplate(iso, e.TextDecoderFunctionCallback())
 	if err := global.Set("TextDecoder", decodeFnTmp); err != nil {
 		return fmt.Errorf("v8go-polyfills/textDecoder global.set: %w", err)
 	}

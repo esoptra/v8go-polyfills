@@ -35,14 +35,10 @@ import (
 )
 
 func TestCrypto(t *testing.T) {
-	iso, _ := v8go.NewIsolate()
+	iso := v8go.NewIsolate()
 	defer iso.Dispose()
 
-	con, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	con := v8go.NewObjectTemplate(iso)
 	if err := fetch.InjectTo(iso, con); err != nil {
 		t.Error(err)
 		return
@@ -126,14 +122,10 @@ Promise.resolve(res)`, "crypto.js")
 }
 
 func TestImportKey(t *testing.T) {
-	iso, _ := v8go.NewIsolate()
+	iso := v8go.NewIsolate()
 	defer iso.Dispose()
 
-	con, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	con := v8go.NewObjectTemplate(iso)
 	if err := fetch.InjectTo(iso, con); err != nil {
 		t.Error(err)
 		return
@@ -184,14 +176,10 @@ func TestImportKey(t *testing.T) {
 }
 
 func TestVerify(t *testing.T) {
-	iso, _ := v8go.NewIsolate()
+	iso := v8go.NewIsolate()
 	defer iso.Dispose()
 
-	con, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	con := v8go.NewObjectTemplate(iso)
 	if err := fetch.InjectTo(iso, con); err != nil {
 		t.Error(err)
 		return
@@ -200,17 +188,13 @@ func TestVerify(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	err = textEncoder.InjectTo(iso, con)
+	err := textEncoder.InjectTo(iso, con)
 	if err != nil {
 		t.Error(err)
 		return
 	}
 
-	ctx, err := v8go.NewContext(iso, con)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	ctx := v8go.NewContext(iso, con)
 	if err := InjectWith(iso, ctx); err != nil {
 		t.Error(err)
 		return

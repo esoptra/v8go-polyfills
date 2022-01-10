@@ -62,10 +62,11 @@ func NewCrypto(opt ...Option) *Crypto {
 func (c *Crypto) cryptoVerifyFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
-		iso, _ := ctx.Isolate()
+		iso := ctx.Isolate()
 		resolver, err := v8go.NewPromiseResolver(ctx)
 		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating newPromiseResolver with ctx: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error creating newPromiseResolver with ctx: %#v", err))
+			return iso.ThrowException(strErr)
 		}
 		go func() {
 			passed := false
@@ -160,10 +161,11 @@ func (c *Crypto) cryptoVerifyFunctionCallback() v8go.FunctionCallback {
 func (c *Crypto) cryptoImportKeyFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
-		iso, _ := ctx.Isolate()
+		iso := ctx.Isolate()
 		resolver, err := v8go.NewPromiseResolver(ctx)
 		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating newPromiseResolver with ctx: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error creating newPromiseResolver with ctx: %#v", err))
+			return iso.ThrowException(strErr)
 		}
 		go func() {
 			args := info.Args()
@@ -295,10 +297,11 @@ type CryptoKeyPair struct {
 func (c *Crypto) cryptoGenerateKeyFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
-		iso, _ := ctx.Isolate()
+		iso := ctx.Isolate()
 		resolver, err := v8go.NewPromiseResolver(ctx)
 		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating newPromiseResolver with ctx: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error creating newPromiseResolver with ctx: %#v", err))
+			return iso.ThrowException(strErr)
 		}
 		go func() {
 			args := info.Args()

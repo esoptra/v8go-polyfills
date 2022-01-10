@@ -45,34 +45,37 @@ func NewEncode(opt ...Option) *Encoder {
 func (c *Encoder) TextEncoderFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
-		iso, _ := ctx.Isolate()
+		iso := ctx.Isolate()
 
 		//https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encode
-		encodeFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		encodeFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 			args := info.Args()
 			if len(args) <= 0 {
-				return iso.ThrowException(fmt.Sprintf("Expected an arguments\n"))
+				strErr, _ := v8go.NewValue(iso, "Expected an arguments\n")
+				return iso.ThrowException(strErr)
 			}
 			s := args[0].String()
 			v, err := v8go.NewValue(iso, []byte(s))
 			if err != nil {
-				return iso.ThrowException(fmt.Sprintf("error creating new val: %#v", err))
+				strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error creating new val: %#v", err))
+				return iso.ThrowException(strErr)
 			}
 			return v
 		})
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating encode() template: %#v", err))
-		}
 
 		//https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto
-		encodeIntoFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		encodeIntoFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 			args := info.Args()
 			if len(args) <= 0 {
-				return iso.ThrowException(fmt.Sprintf("Expected an arguments\n"))
+				strErr, _ := v8go.NewValue(iso, "Expected an arguments\n")
+
+				return iso.ThrowException(strErr)
 			}
 			s := args[0].String()
 			if !args[1].IsArrayBuffer() {
-				return iso.ThrowException(fmt.Sprintf("Expected second argument format as ArrayBuffer\n"))
+				strErr, _ := v8go.NewValue(iso, "Expected second argument format as ArrayBuffer\n")
+
+				return iso.ThrowException(strErr)
 			}
 
 			outArray := args[1].ArrayBuffer()
@@ -83,34 +86,31 @@ func (c *Encoder) TextEncoderFunctionCallback() v8go.FunctionCallback {
 				result[i] = s[i]
 			}
 			outArray.PutBytes(result[:i])
-			//return meta info
-			obj := v8go.NewObject(info.Context()) // create object
-			obj.Set("read", int32(i))             // set some properties
+			obj := info.Context().Global() // create object
+			obj.Set("read", int32(i))      // set some properties
 			obj.Set("written", int32(len(result[:i])))
-			fmt.Println("obj set")
 			return obj.Value
 		})
 
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating encodeInto() template: %#v", err))
-		}
-
-		resTmp, err := v8go.NewObjectTemplate(iso)
-		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error creating object template: %#v", err))
-		}
+		resTmp := v8go.NewObjectTemplate(iso)
 
 		if err := resTmp.Set("encode", encodeFnTmp, v8go.ReadOnly); err != nil {
-			return iso.ThrowException(fmt.Sprintf("error setting encode function template: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error setting encode function template: %#v", err))
+
+			return iso.ThrowException(strErr)
 		}
 
 		if err := resTmp.Set("encodeInto", encodeIntoFnTmp, v8go.ReadOnly); err != nil {
-			return iso.ThrowException(fmt.Sprintf("error setting encodeInto function template: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error setting encodeInto function template: %#v", err))
+
+			return iso.ThrowException(strErr)
 		}
 
 		resObj, err := resTmp.NewInstance(ctx)
 		if err != nil {
-			return iso.ThrowException(fmt.Sprintf("error new instance from ctx: %#v", err))
+			strErr, _ := v8go.NewValue(iso, fmt.Sprintf("error new instance from ctx: %#v", err))
+
+			return iso.ThrowException(strErr)
 		}
 		return resObj.Value
 	}
