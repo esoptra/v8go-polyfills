@@ -6,6 +6,8 @@ github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0 h1:sgNeV1VRMDzs6rzyPpxyM0jp317h
 github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0/go.mod h1:J70FGZSbzsjecRTiTzER+3f1KZLNaXkuv+yeFTKoxM8=
 github.com/esoptra/v8go v0.6.1-0.20220110092708-a561bea96f13 h1:A/plK4q8x4IpgNwSRZevp8ln6HhasFgOhT8Kqzvn4M4=
 github.com/esoptra/v8go v0.6.1-0.20220110092708-a561bea96f13/go.mod h1:r6W6j/2pVSOqdS1oITIQIKo6AuTbhYYhREWPDUqUu6A=
+github.com/esoptra/v8go v0.6.1-0.20220110102507-890a44074b1b h1:LyaVcdp8X8nlbVp9CwadgCYRkKXY766l4Mioi6oa400=
+github.com/esoptra/v8go v0.6.1-0.20220110102507-890a44074b1b/go.mod h1:r6W6j/2pVSOqdS1oITIQIKo6AuTbhYYhREWPDUqUu6A=
 github.com/goccy/go-json v0.4.8 h1:TfwOxfSp8hXH+ivoOk36RyDNmXATUETRdaNWDaZglf8=
 github.com/goccy/go-json v0.4.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/lestrrat-go/backoff/v2 v2.0.7 h1:i2SeK33aOFJlUNJZzf2IpXRBvqBBnaGXfY5Xaop/GsE=
