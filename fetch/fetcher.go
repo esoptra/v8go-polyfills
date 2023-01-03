@@ -101,6 +101,11 @@ func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Println("recovered from panic", r)
+				}
+			}()
 			if len(args) <= 0 {
 				err := errors.New("1 argument required, but only 0 present")
 				resolver.Reject(newErrorValue(ctx, err))
@@ -407,7 +412,6 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 
 func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 	iso := ctx.Isolate()
-
 	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/get
 	getFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
