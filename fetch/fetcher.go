@@ -103,7 +103,7 @@ func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 		go func() {
 			defer func() {
 				if r := recover(); r != nil {
-					resolver.Reject(newErrorValue(ctx, fmt.Errorf("panic is v8: %#v", r)))
+					_ = fmt.Errorf("panic is v8: %#v", r)
 					return
 				}
 			}()
