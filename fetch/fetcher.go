@@ -101,6 +101,12 @@ func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					resolver.Reject(newErrorValue(ctx, fmt.Errorf("panic is v8: %#v", r)))
+					return
+				}
+			}()
 			if len(args) <= 0 {
 				err := errors.New("1 argument required, but only 0 present")
 				resolver.Reject(newErrorValue(ctx, err))
