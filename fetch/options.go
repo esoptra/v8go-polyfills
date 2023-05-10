@@ -78,3 +78,9 @@ func WithResponseMap(resMap *sync.Map) Option {
 		ft.ResponseMap = resMap
 	})
 }
+
+func WithTransport(transport http.RoundTripper) Option {
+	return optionFunc(func(ft *Fetch) {
+		ft.Transport = transport
+	})
+}
