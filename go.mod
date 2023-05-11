@@ -3,7 +3,7 @@ module github.com/esoptra/v8go-polyfills
 go 1.16
 
 require (
-	github.com/esoptra/v8go v0.6.1-0.20230103130654-956aa19e903c // indirect
+	github.com/esoptra/v8go v0.6.1-0.20230511114440-738784f0a146
 	github.com/lestrrat-go/jwx v1.2.1
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/text v0.3.6
