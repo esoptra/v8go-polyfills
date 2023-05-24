@@ -4,8 +4,12 @@ github.com/decred/dcrd/chaincfg/chainhash v1.0.2/go.mod h1:BpbrGgrPTr3YJYRN3Bm+D
 github.com/decred/dcrd/crypto/blake256 v1.0.0/go.mod h1:sQl2p6Y26YV+ZOcSTP6thNdn47hh8kt6rqSlvmrXFAc=
 github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0 h1:sgNeV1VRMDzs6rzyPpxyM0jp317hnwiq58Filgag2xw=
 github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0/go.mod h1:J70FGZSbzsjecRTiTzER+3f1KZLNaXkuv+yeFTKoxM8=
+github.com/esoptra/v8go v0.6.1-0.20230103130654-956aa19e903c h1:Uth6tD+/yb19vhMfzTQlbP1fmWvmaCYCVU6g+4xdtXQ=
+github.com/esoptra/v8go v0.6.1-0.20230103130654-956aa19e903c/go.mod h1:r6W6j/2pVSOqdS1oITIQIKo6AuTbhYYhREWPDUqUu6A=
 github.com/esoptra/v8go v0.6.1-0.20230511114440-738784f0a146 h1:vxJFpo68tTJexd//V7LIZZPsziu38qYG8Ifk1wD0XQM=
 github.com/esoptra/v8go v0.6.1-0.20230511114440-738784f0a146/go.mod h1:r6W6j/2pVSOqdS1oITIQIKo6AuTbhYYhREWPDUqUu6A=
+github.com/esoptra/v8go v0.6.1-0.20230524133307-f70bd93a29f0 h1:7wy/LKl7WLf7hCQB/RRTP0rTz+U6HwCSLT9O0YRDs0g=
+github.com/esoptra/v8go v0.6.1-0.20230524133307-f70bd93a29f0/go.mod h1:r6W6j/2pVSOqdS1oITIQIKo6AuTbhYYhREWPDUqUu6A=
 github.com/goccy/go-json v0.4.8 h1:TfwOxfSp8hXH+ivoOk36RyDNmXATUETRdaNWDaZglf8=
 github.com/goccy/go-json v0.4.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/lestrrat-go/backoff/v2 v2.0.7 h1:i2SeK33aOFJlUNJZzf2IpXRBvqBBnaGXfY5Xaop/GsE=
