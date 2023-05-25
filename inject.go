@@ -25,7 +25,6 @@ package polyfills
 import (
 	"github.com/esoptra/v8go-polyfills/base64"
 	"github.com/esoptra/v8go-polyfills/console"
-	"github.com/esoptra/v8go-polyfills/crypto"
 	"github.com/esoptra/v8go-polyfills/fetch"
 	"github.com/esoptra/v8go-polyfills/internal"
 	"github.com/esoptra/v8go-polyfills/textDecoder"
@@ -109,9 +108,9 @@ func InjectToContext(ctx *v8go.Context, iso *v8go.Isolate, opt ...interface{}) e
 		}
 	}
 
-	if err := crypto.InjectWith(iso, ctx); err != nil {
-		return err
-	}
+	// if err := crypto.InjectWith(iso, ctx); err != nil {
+	// 	return err
+	// }
 	if err := console.InjectTo(ctx, consoleOpts...); err != nil {
 		return err
 	}
