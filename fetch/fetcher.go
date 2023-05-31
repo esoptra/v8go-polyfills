@@ -72,6 +72,7 @@ type Fetch struct {
 	AddrLocal         string
 	ResponseMap       *sync.Map
 	InputBody         io.ReadCloser
+    PrefetchRequestManipulation func(*http.Request)
 }
 
 func NewFetcher(opt ...Option) *Fetch {
@@ -80,6 +81,7 @@ func NewFetcher(opt ...Option) *Fetch {
 		UserAgentProvider: defaultUserAgentProvider,
 		AddrLocal:         AddrLocal,
 		ResponseMap:       &sync.Map{},
+        PrefetchRequestManipulation: func(req *http.Request) {},
 	}
 
 	for _, o := range opt {
@@ -285,6 +287,8 @@ func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 		return nil, err
 	}
 	req.Header = r.Header
+
+    f.PrefetchRequestManipulation(req)
 
 	redirected := false
 	client := &http.Client{

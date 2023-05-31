@@ -78,3 +78,9 @@ func WithResponseMap(resMap *sync.Map) Option {
 		ft.ResponseMap = resMap
 	})
 }
+
+func WithPrefetchRequestManipulation(prefetch func(*http.Request)) Option {
+	return optionFunc(func(ft *fetcher) {
+		ft.PrefetchRequestManipulation = prefetch
+	})
+}
