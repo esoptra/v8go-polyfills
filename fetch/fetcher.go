@@ -72,7 +72,7 @@ type Fetch struct {
 	AddrLocal         string
 	ResponseMap       *sync.Map
 	InputBody         io.ReadCloser
-    PrefetchRequestManipulation func(*http.Request)
+	Transport         http.RoundTripper
 }
 
 func NewFetcher(opt ...Option) *Fetch {
@@ -81,7 +81,7 @@ func NewFetcher(opt ...Option) *Fetch {
 		UserAgentProvider: defaultUserAgentProvider,
 		AddrLocal:         AddrLocal,
 		ResponseMap:       &sync.Map{},
-        PrefetchRequestManipulation: func(req *http.Request) {},
+		Transport:         http.DefaultTransport,
 	}
 
 	for _, o := range opt {
@@ -288,11 +288,9 @@ func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	}
 	req.Header = r.Header
 
-    f.PrefetchRequestManipulation(req)
-
 	redirected := false
 	client := &http.Client{
-		Transport: http.DefaultTransport,
+		Transport: f.Transport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			switch r.Redirect {
 			case internal.RequestRedirectError:

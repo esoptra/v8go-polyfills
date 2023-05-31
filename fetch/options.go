@@ -79,8 +79,10 @@ func WithResponseMap(resMap *sync.Map) Option {
 	})
 }
 
-func WithPrefetchRequestManipulation(prefetch func(*http.Request)) Option {
+
+func WithTransport(transport http.RoundTripper) Option {
 	return optionFunc(func(ft *Fetch) {
-		ft.PrefetchRequestManipulation = prefetch
-	})
+        ft.Transport = transport
+    })
 }
+
