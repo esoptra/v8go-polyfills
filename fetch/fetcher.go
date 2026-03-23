@@ -75,6 +75,7 @@ type Fetch struct {
 	ResponseMap       *sync.Map
 	InputBody         io.ReadCloser
 	Transport         http.RoundTripper
+	Timeout           time.Duration
 }
 
 func NewFetcher(opt ...Option) *Fetch {
@@ -84,6 +85,7 @@ func NewFetcher(opt ...Option) *Fetch {
 		Transport:         defaultTransport,
 		AddrLocal:         AddrLocal,
 		ResponseMap:       &sync.Map{},
+		Timeout:           20 * time.Second,
 	}
 
 	for _, o := range opt {
@@ -306,7 +308,7 @@ func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 			redirected = true
 			return nil
 		},
-		Timeout: 20 * time.Second,
+		Timeout: f.Timeout,
 	}
 
 	res, err := client.Do(req)
