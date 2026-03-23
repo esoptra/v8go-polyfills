@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 )
 
 type UserAgentProvider interface {
@@ -82,5 +83,11 @@ func WithResponseMap(resMap *sync.Map) Option {
 func WithTransport(transport http.RoundTripper) Option {
 	return optionFunc(func(ft *Fetch) {
 		ft.Transport = transport
+	})
+}
+
+func WithTimeout(timeout time.Duration) Option {
+	return optionFunc(func(ft *Fetch) {
+		ft.Timeout = timeout
 	})
 }
