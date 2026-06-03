@@ -76,6 +76,21 @@ type Fetch struct {
 	InputBody         io.ReadCloser
 	Transport         http.RoundTripper
 	Timeout           time.Duration
+
+	// inflight tracks the background goroutines spawned by fetch() and by the
+	// response body readers (text()/json()). Those goroutines call back into the
+	// v8 isolate (NewValue/JSONParse/resolver.Resolve/Reject) when they finish.
+	// Callers MUST call Wait() before disposing the isolate, otherwise a slow or
+	// failing fetch can settle its promise on a freed isolate -> native SIGSEGV.
+	inflight sync.WaitGroup
+}
+
+// Wait blocks until all background goroutines spawned by fetch() (and the
+// response body readers) have returned. Call this before disposing the v8
+// isolate the fetcher was injected into, to avoid a use-after-free crash when a
+// late fetch settles its promise against an already-disposed isolate.
+func (f *Fetch) Wait() {
+	f.inflight.Wait()
 }
 
 func NewFetcher(opt ...Option) *Fetch {
@@ -106,7 +121,9 @@ func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
+		f.inflight.Add(1)
 		go func() {
+			defer f.inflight.Done()
 			defer func() {
 				if r := recover(); r != nil {
 					fmt.Println("panic is v8: ", r)
@@ -189,7 +206,7 @@ func (f *Fetch) GetFetchFunctionCallback() v8go.FunctionCallback {
 			f.ResponseMap.Store(mini, res.BodyReader)
 			res.Body = mini
 
-			resObj, err := newResponseObject(ctx, res)
+			resObj, err := f.newResponseObject(ctx, res)
 			if err != nil {
 				resolver.Reject(newErrorValue(ctx, err))
 				return
@@ -319,7 +336,7 @@ func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	return internal.HandleHttpResponse(res, r.URL.String(), redirected)
 }
 
-func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
+func (f *Fetch) newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
 	iso := ctx.Isolate()
 
 	headers, err := newHeadersObject(ctx, res.Header)
@@ -331,7 +348,9 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		ctx := info.Context()
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
+		f.inflight.Add(1)
 		go func() {
+			defer f.inflight.Done()
 			defer res.BodyReader.Close()
 			resBody, err := ioutil.ReadAll(res.BodyReader)
 			if err != nil {
@@ -354,7 +373,9 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
+		f.inflight.Add(1)
 		go func() {
+			defer f.inflight.Done()
 			defer res.BodyReader.Close()
 			resBody, err := ioutil.ReadAll(res.BodyReader)
 			if err != nil {
