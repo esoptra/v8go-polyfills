@@ -299,6 +299,10 @@ func (f *Fetch) fetchRemote(r *internal.Request) (*internal.Response, error) {
 			switch r.Redirect {
 			case internal.RequestRedirectError:
 				return errors.New("redirects are not allowed")
+			case internal.RequestRedirectManual:
+				// Don't follow: return the 3xx response as-is so the
+				// caller can inspect status and the Location header.
+				return http.ErrUseLastResponse
 			default:
 				if len(via) >= 10 {
 					return errors.New("stopped after 10 redirects")

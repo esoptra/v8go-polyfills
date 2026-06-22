@@ -109,6 +109,74 @@ func TestFetchJSON(t *testing.T) {
 	}
 }
 
+func TestFetchRedirectManual(t *testing.T) {
+	t.Parallel()
+
+	ctx, err := newV8ContextWithFetch()
+	if err != nil {
+		t.Errorf("create v8: %s", err)
+		return
+	}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/dest" {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("arrived"))
+			return
+		}
+		w.Header().Set("Location", "/dest")
+		w.WriteHeader(http.StatusFound)
+	}))
+	defer srv.Close()
+
+	script := fmt.Sprintf(
+		`fetch('%s', { redirect: 'manual' }).then(res => ({ status: res.status, location: res.headers.get('location'), redirected: res.redirected }))`,
+		srv.URL,
+	)
+
+	val, err := ctx.RunScript(script, "fetch_redirect_manual.js")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	proms, err := val.AsPromise()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	for proms.State() == v8go.Pending {
+		continue
+	}
+
+	if proms.State() == v8go.Rejected {
+		t.Errorf("promise rejected: %s", proms.Result().DetailString())
+		return
+	}
+
+	res, err := proms.Result().AsObject()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	status, _ := res.Get("status")
+	if status.Int32() != http.StatusFound {
+		t.Errorf("status should be 302 but is %d", status.Int32())
+	}
+
+	location, _ := res.Get("location")
+	if location.String() != "/dest" {
+		t.Errorf("location should be '/dest' but is '%s'", location.String())
+	}
+
+	redirected, _ := res.Get("redirected")
+	if redirected.Boolean() {
+		t.Error("redirected should be false for manual redirect")
+	}
+}
+
 func TestHeaders(t *testing.T) {
 	t.Parallel()
 
