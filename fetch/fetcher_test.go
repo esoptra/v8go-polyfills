@@ -161,17 +161,29 @@ func TestFetchRedirectManual(t *testing.T) {
 		return
 	}
 
-	status, _ := res.Get("status")
+	status, err := res.Get("status")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if status.Int32() != http.StatusFound {
 		t.Errorf("status should be 302 but is %d", status.Int32())
 	}
 
-	location, _ := res.Get("location")
+	location, err := res.Get("location")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if location.String() != "/dest" {
 		t.Errorf("location should be '/dest' but is '%s'", location.String())
 	}
 
-	redirected, _ := res.Get("redirected")
+	redirected, err := res.Get("redirected")
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	if redirected.Boolean() {
 		t.Error("redirected should be false for manual redirect")
 	}
